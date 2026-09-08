@@ -69,7 +69,7 @@ jobs:
 
       - name: Deploy
         run: |
-          helm upgrade --install site-ad .helm/ \
+          helm upgrade --install site-ksk-inlove .helm/ \
             --namespace consumer \
             --create-namespace \
             --set imageTag=${{ github.sha }} \
