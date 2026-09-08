@@ -1,0 +1,23 @@
+# Deployment settings
+name: site-ksk-inlove
+componentsLabel: site-ksk-inlove
+replicaCount: 1
+namespace: consumer
+
+# App settings
+containerPort: 3000
+resources:
+  requests:
+    cpu: 100m
+    memory: 128Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi
+
+# Ingress settings
+url: inlove-stand.eqcms.ru
+
+# Image settings
+image: ghcr.io/igor-526/inlove-site
+imagePullSecertName: ghcr-secret-ad
+imageTag: latest
