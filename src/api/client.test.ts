@@ -22,6 +22,27 @@ describe("public read client", () => {
       .toBe("/horses?active=true&page=2&tag=a&tag=b#list");
   });
 
+  it.each([undefined, "", "   ", "/api", "api.example.test", "ftp://api.example.test"])(
+    "fails safely when NEXT_PUBLIC_API_BASE_URL is missing or invalid: %s",
+    async (configuredUrl) => {
+      if (configuredUrl === undefined) {
+        delete process.env.NEXT_PUBLIC_API_BASE_URL;
+      } else {
+        process.env.NEXT_PUBLIC_API_BASE_URL = configuredUrl;
+      }
+      process.env.API_BASE_URL = "https://unapproved-fallback.example.test/api";
+      const fetchMock = vi.fn();
+      vi.stubGlobal("fetch", fetchMock);
+
+      expect(() => resolveApiBaseUrl()).toThrow(/NEXT_PUBLIC_API_BASE_URL/);
+      await expect(apiFetch("/horses")).resolves.toEqual({
+        status: "error",
+        data: { detail: "Public API is not configured" },
+      });
+      expect(fetchMock).not.toHaveBeenCalled();
+    }
+  );
+
   it("adds selector to anonymous GET and removes CMS credentials (UT-IL-02)", async () => {
     process.env.NEXT_PUBLIC_API_BASE_URL = "https://api.example.test/api";
     process.env.NEXT_PUBLIC_EQUESTRIAN_SERVICE_KEY = " inlove ";

@@ -1,5 +1,7 @@
 import { ApiResult, DetailResponse } from "@/types";
 
+class ApiConfigurationError extends Error {}
+
 export function addQueryParamsToUrl<T extends Record<string, unknown>>(
   url: string,
   params: T = {} as T
@@ -46,61 +48,24 @@ function ensureApiSuffix(url: string) {
 }
 
 export function resolveApiBaseUrl() {
-  const explicitUrl =
-    process.env.NEXT_PUBLIC_API_BASE_URL ??
-    process.env.API_BASE_URL;
+  const configuredUrl = process.env.NEXT_PUBLIC_API_BASE_URL?.trim();
 
-  if (explicitUrl) {
-    const trimmed = explicitUrl.trim();
-
-    if (trimmed.startsWith("http://") || trimmed.startsWith("https://")) {
-      return ensureApiSuffix(trimmed);
-    }
-
-    if (trimmed.startsWith("//")) {
-      if (typeof window !== "undefined") {
-        const protocol = window.location.protocol;
-        return ensureApiSuffix(`${protocol}${trimmed.replace(/\/+$/, "")}`);
-      }
-      return ensureApiSuffix(`https:${trimmed.replace(/\/+$/, "")}`);
-    }
-
-    if (trimmed.startsWith("/")) {
-      if (typeof window !== "undefined") {
-        return ensureApiSuffix(`${window.location.origin}${trimmed.replace(/\/+$/, "")}`);
-      }
-      return ensureApiSuffix(`http://localhost:8001${trimmed.replace(/\/+$/, "")}`);
-    }
-
-    if (typeof window !== "undefined") {
-      const protocol = window.location.protocol;
-      return ensureApiSuffix(`${protocol}//${trimmed.replace(/\/+$/, "")}`);
-    }
-
-    return ensureApiSuffix(`https://${trimmed.replace(/\/+$/, "")}`);
+  if (!configuredUrl) {
+    throw new ApiConfigurationError("NEXT_PUBLIC_API_BASE_URL must be configured");
   }
 
-  if (typeof window !== "undefined") {
-    const { protocol, hostname, port } = window.location;
-
-    const configuredPort = process.env.NEXT_PUBLIC_API_PORT;
-    const backendPort =
-      configuredPort && configuredPort.trim() !== ""
-        ? configuredPort
-        : port && port !== "" && port !== "3000"
-          ? port
-          : "8001";
-
-    const normalizedPort =
-      (protocol === "http:" && backendPort === "80") ||
-        (protocol === "https:" && backendPort === "443")
-        ? ""
-        : `:${backendPort}`;
-
-    return ensureApiSuffix(`${protocol}//${hostname}${normalizedPort}`);
+  let parsedUrl: URL;
+  try {
+    parsedUrl = new URL(configuredUrl);
+  } catch {
+    throw new ApiConfigurationError("NEXT_PUBLIC_API_BASE_URL must be an absolute HTTP(S) URL");
   }
 
-  return ensureApiSuffix("http://localhost:8001");
+  if (parsedUrl.protocol !== "http:" && parsedUrl.protocol !== "https:") {
+    throw new ApiConfigurationError("NEXT_PUBLIC_API_BASE_URL must be an absolute HTTP(S) URL");
+  }
+
+  return ensureApiSuffix(parsedUrl.toString());
 }
 
 export function resolveEquestrianServiceKey() {
@@ -142,10 +107,9 @@ export default async function apiFetch<T>(
     return { status: "error", data: { detail: "Unsupported public API operation" } };
   }
 
-  const apiBaseUrl = resolveApiBaseUrl();
-  const url = `${apiBaseUrl}${path}`;
-
   try {
+    const apiBaseUrl = resolveApiBaseUrl();
+    const url = `${apiBaseUrl}${path}`;
     const finalOptions: RequestInit = {
       ...options,
       headers: buildHeaders(options),
@@ -185,7 +149,10 @@ export default async function apiFetch<T>(
       (raw?.trim() || res.statusText || "Request failed");
 
     return { status: "error", data: { detail }, statusCode: res.status };
-  } catch {
+  } catch (error) {
+    if (error instanceof ApiConfigurationError) {
+      return { status: "error", data: { detail: "Public API is not configured" } };
+    }
     return { status: "error", data: { detail: "Network error or invalid JSON" } };
   }
 }

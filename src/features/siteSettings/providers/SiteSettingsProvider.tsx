@@ -3,11 +3,11 @@
 import type { ReactNode } from "react";
 
 import { SiteSettingsContext } from "../context/SiteSettingsContext";
-import type { SiteSettings } from "../services/getSiteSettings";
+import type { SharedSiteSettings } from "../services/getSiteSettings";
 
 interface SiteSettingsProviderProps {
   children: ReactNode;
-  settings: SiteSettings;
+  settings: SharedSiteSettings;
 }
 
 export const SiteSettingsProvider = ({ children, settings }: SiteSettingsProviderProps) => (

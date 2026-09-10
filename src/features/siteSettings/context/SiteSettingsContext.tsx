@@ -2,11 +2,11 @@
 
 import { createContext, useContext } from "react";
 
-import type { SiteSettings } from "../services/getSiteSettings";
+import type { SharedSiteSettings } from "../services/getSiteSettings";
 
-export const SiteSettingsContext = createContext<SiteSettings | null>(null);
+export const SiteSettingsContext = createContext<SharedSiteSettings | null>(null);
 
-export const useSiteSettings = (): SiteSettings => {
+export const useSiteSettings = (): SharedSiteSettings => {
   const settings = useContext(SiteSettingsContext);
 
   if (!settings) {

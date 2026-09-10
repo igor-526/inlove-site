@@ -1,7 +1,8 @@
 @import "tailwindcss";
+@import "../ui/foundations/tokens.css";
 
 :root {
-  color-scheme: light dark;
+  color-scheme: light;
 }
 
 * {
@@ -15,5 +16,33 @@ body {
 }
 
 body {
-  font-family: system-ui, sans-serif;
+  background: var(--color-bg-primary);
+  color: var(--color-text-primary);
+  font-family: var(--font-sans);
+  font-size: var(--text-body-m-size);
+  line-height: var(--text-body-m-line);
+  overflow-wrap: anywhere;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+:focus-visible {
+  outline: var(--focus-width) solid var(--focus-color);
+  outline-offset: var(--focus-offset);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
 }

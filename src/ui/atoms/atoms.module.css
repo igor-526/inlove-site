@@ -1,0 +1,18 @@
+.logo { color: inherit; display: inline-flex; min-width: 44px; min-height: 44px; padding: 4px; align-items: center; justify-content: center; text-decoration: none; }
+.logoImage { display: block; width: auto; height: 56px; max-width: 150px; object-fit: contain; }
+.logoText { font-family: var(--font-serif); font-size: 28px; font-weight: 600; letter-spacing: .02em; }
+.light { color: var(--color-text-inverse); }.dark { color: var(--color-brand-primary); }
+.light .logoImage { outline: 1px solid rgba(255,255,255,.14); }
+.icon { display: inline-block; flex: none; }
+.badge { display: inline-flex; align-items: center; min-height: 28px; max-width: 100%; padding: 4px 12px; border-radius: var(--radius-pill); font-size: 14px; line-height: 1.4; overflow-wrap: anywhere; }
+.neutral { background: var(--color-bg-sand); color: var(--color-text-primary); }.nature { background: var(--color-bg-sage); color: var(--color-brand-primary); }.badgeDark { background: var(--color-bg-dark); color: var(--color-text-inverse); }
+.imageFrame { position: relative; display: block; overflow: hidden; border-radius: var(--radius-lg); background: var(--color-bg-sage); }
+.hero { aspect-ratio: 16 / 9; }.ratio45 { aspect-ratio: 4 / 5; }.ratio34 { aspect-ratio: 3 / 4; }.ratio1610 { aspect-ratio: 16 / 10; }.ratio32 { aspect-ratio: 3 / 2; }
+.image { width: 100%; height: 100%; display: block; object-fit: cover; transition: transform var(--motion-image); }
+.fallback { width: 100%; height: 100%; display: grid; place-items: center; color: var(--color-text-secondary); background: linear-gradient(135deg, var(--color-bg-sage), var(--color-bg-sand)); }
+.sectionLabel { display: block; color: var(--color-text-secondary); font-size: 13px; line-height: 1.3; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; overflow-wrap: anywhere; }
+.divider { margin: 0; border: 0; border-top: var(--border-default); }.dividerStrong { border-color: var(--color-border-strong); }.dividerInverse { border-color: rgba(255, 255, 255, .2); }
+.price { display: inline-flex; flex-wrap: wrap; align-items: baseline; gap: 8px; font-family: var(--font-sans); font-size: var(--text-h3-size); line-height: 1.1; font-weight: 600; font-variant-numeric: tabular-nums; }
+.duration { color: var(--color-text-muted); font-size: var(--text-body-s-size); font-weight: 400; }
+@media (hover: hover) { .imageFrame:hover .image { transform: scale(1.02); } }
+@media (prefers-reduced-motion: reduce) { .image { transition: none; }.imageFrame:hover .image { transform: none; } }

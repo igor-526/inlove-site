@@ -1,0 +1,23 @@
+.container { width: 100%; max-width: 1360px; margin-inline: auto; padding-inline: 40px; }
+.wide { max-width: 1440px; }
+.section { padding-block: var(--space-30); }
+.compact { padding-block: var(--space-20); }
+.editorial { padding-block: var(--space-40); }
+.ivory { background: var(--color-bg-primary); }.surface { background: var(--color-bg-secondary); }
+.sage { background: var(--color-bg-sage); }.sand { background: var(--color-bg-sand); }
+.forest { background: var(--color-bg-dark); color: var(--color-text-inverse); }
+.text { margin: 0; overflow-wrap: anywhere; }
+.serif { font-family: var(--font-serif); font-weight: 500; }
+.sans { font-family: var(--font-sans); }
+.displayXl { font-size: var(--text-display-xl-size); line-height: var(--text-display-xl-line); }
+.displayL { font-size: var(--text-display-l-size); line-height: var(--text-display-l-line); }
+.h1 { font-size: var(--text-h1-size); line-height: var(--text-h1-line); }.h2 { font-size: var(--text-h2-size); line-height: var(--text-h2-line); }
+.h3 { font-size: var(--text-h3-size); line-height: var(--text-h3-line); }.h4 { font-size: var(--text-h4-size); line-height: var(--text-h4-line); }
+.bodyL { font-size: var(--text-body-l-size); line-height: var(--text-body-l-line); }.bodyM { font-size: var(--text-body-m-size); line-height: var(--text-body-m-line); }
+.bodyS { font-size: var(--text-body-s-size); line-height: var(--text-body-s-line); }.label { font-size: var(--text-label-size); letter-spacing: .06em; text-transform: uppercase; font-weight: 600; }
+.meta { font-size: var(--text-meta-size); line-height: 1.45; }.price { font-family: var(--font-sans); font-size: var(--text-h3-size); line-height: 1.1; font-weight: 600; }
+.primary { color: var(--color-text-primary); }.secondary { color: var(--color-text-secondary); }.muted { color: var(--color-text-muted); }.inverse { color: var(--color-text-inverse); }
+@media (min-width: 1440px) { .container { padding-inline: 56px; } }
+@media (max-width: 1023px) { .container { padding-inline: 32px; } }
+@media (max-width: 767px) { .container { padding-inline: 20px; }.section { padding-block: 72px; }.compact { padding-block: 56px; }.editorial { padding-block: 96px; } }
+@media (max-width: 375.98px) { .container { padding-inline: 16px; } }

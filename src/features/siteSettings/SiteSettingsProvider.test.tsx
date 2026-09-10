@@ -2,18 +2,14 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 
 import { SiteSettingsProvider } from "./providers/SiteSettingsProvider";
-import type { SiteSettings } from "./services/getSiteSettings";
+import { FALLBACK_SHARED_SETTINGS, type SharedSiteSettings } from "./services/getSiteSettings";
 import { useSiteSettings } from "./context/SiteSettingsContext";
 
-const settings: SiteSettings = {
-  siteName: "InLove",
-  socials: [],
-  getSetting: (key) => key === "site_name" ? "InLove" : undefined,
-};
+const settings: SharedSiteSettings = { ...FALLBACK_SHARED_SETTINGS, shortName: "InLove" };
 
 const SettingsConsumer = () => {
   const value = useSiteSettings();
-  return <span>{value.siteName}</span>;
+  return <span>{value.shortName}</span>;
 };
 
 describe("site settings provider and hook", () => {
