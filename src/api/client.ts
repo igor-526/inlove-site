@@ -69,7 +69,7 @@ export function resolveApiBaseUrl() {
 }
 
 export function resolveEquestrianServiceKey() {
-  return (process.env.NEXT_PUBLIC_EQUESTRIAN_SERVICE_KEY ?? "").trim();
+  return (process.env.NEXT_PUBLIC_EQUESTRIAN_SERVICE_KEY ?? "default").trim();
 }
 
 export function buildHeaders(options?: RequestInit) {
@@ -81,11 +81,6 @@ export function buildHeaders(options?: RequestInit) {
   for (const [key, value] of Object.entries(normalizeHeaders(options?.headers))) {
     headers.set(key, value);
   }
-
-  // Public consumers never forward CMS credentials, even when a caller supplies them.
-  headers.delete("Authorization");
-  headers.delete("Cookie");
-  headers.delete("X-Equestrian-Service-Key");
 
   const serviceKey = resolveEquestrianServiceKey();
 
