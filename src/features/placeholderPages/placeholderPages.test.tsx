@@ -1,12 +1,9 @@
 // @vitest-environment jsdom
 import { render, screen } from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
-import { siteSettingList } from "@/api/siteSettings";
+import { describe, expect, it } from "vitest";
 import { UnderConstructionPage } from "./UnderConstructionPage";
 import { createRouteMetadata, PLACEHOLDER_ROUTES } from "./metadata";
 
-vi.mock("@/api/siteSettings", () => ({ siteSettingList: vi.fn() }));
-const siteSettingListMock = vi.mocked(siteSettingList);
 
 // `/uslugi/zanyatiya`, `/uslugi/progulki`, `/uslugi/postoy` and `/loshadi` were replaced with real
 // SSR content by inlove-dynamic-pages (SC-1..SC-4) and no longer use UnderConstructionPage; these
@@ -36,8 +33,6 @@ describe("REN-PAGE-01 route SSR content", () => {
 });
 
 describe("REN-PAGE-02 server metadata", () => {
-  beforeEach(() => siteSettingListMock.mockResolvedValue({ status: "ok", data: [] } as never));
-
   it.each(Object.entries(PLACEHOLDER_ROUTES))("provides fallback metadata and canonical for %s", async (route, config) => {
     const metadata = await createRouteMetadata(route as keyof typeof PLACEHOLDER_ROUTES);
     expect(metadata.title).toBe(config.title);
@@ -45,12 +40,7 @@ describe("REN-PAGE-02 server metadata", () => {
     expect(metadata.alternates).toEqual({ canonical: config.path });
   });
 
-  it("prefers route SEO settings to defaults", async () => {
-    siteSettingListMock.mockResolvedValue({ status: "ok", data: [
-      { key: "seo.news.title", value: "Новости клуба Инлав", type: "string" },
-      { key: "seo.news.description", value: "Свежие новости клуба", type: "string" },
-      { key: "seo.default_title", value: "Общий заголовок", type: "string" },
-    ] } as never);
-    await expect(createRouteMetadata("news")).resolves.toMatchObject({ title: "Новости клуба Инлав", description: "Свежие новости клуба" });
+  it("keeps metadata independent from removed SEO settings", () => {
+    expect(createRouteMetadata("news")).toMatchObject({ title: "Инлав | Новости", description: expect.any(String) });
   });
 });

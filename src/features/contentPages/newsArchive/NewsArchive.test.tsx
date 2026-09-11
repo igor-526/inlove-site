@@ -2,12 +2,11 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { renderToStaticMarkup } from "react-dom/server";
 import { NewsArchive, NewsPagination, newsDate } from "./NewsArchive";
 import NewsPage, { generateMetadata } from "@/app/novosti/page";
-import { loadContentSettings, loadNewsArchive } from "../services/loaders";
+import { loadNewsArchive } from "../services/loaders";
 
 vi.mock("../services/loaders", async (original) => ({
   ...await original<typeof import("../services/loaders")>(),
   loadNewsArchive: vi.fn(),
-  loadContentSettings: vi.fn(),
 }));
 vi.mock("next/navigation", () => ({
   redirect: (path: string) => { throw new Error(`redirect:${path}`); },
@@ -21,7 +20,6 @@ const props = (page?: string | string[]) => ({ searchParams: Promise.resolve({ p
 
 beforeEach(() => {
   vi.clearAllMocks();
-  vi.mocked(loadContentSettings).mockResolvedValue({ status: "empty" });
   vi.mocked(loadNewsArchive).mockResolvedValue({ status: "success", data: { total: 26, items: items(1, 12) } });
 });
 
@@ -65,15 +63,10 @@ describe("UT-SC-07 server pagination", () => {
 });
 
 describe("UT-SC-08 states and SSR", () => {
-  it("renders configured intro/empty state without pagination", async () => {
-    vi.mocked(loadContentSettings).mockResolvedValue({ status: "success", data: [
-      { key: "news.intro", value: "Жизнь клуба", type: "string" },
-      { key: "news.empty_text", value: "Скоро новости", type: "string" },
-    ] });
+  it("renders static empty state without pagination", async () => {
     vi.mocked(loadNewsArchive).mockResolvedValue({ status: "empty" });
     const html = renderToStaticMarkup(await NewsPage(props()));
-    expect(html).toContain("Жизнь клуба");
-    expect(html).toContain("Скоро новости");
+    expect(html).toContain("Новостей пока нет");
     expect(html).not.toContain("<nav");
     expect((await generateMetadata(props())).robots).toBeUndefined();
   });

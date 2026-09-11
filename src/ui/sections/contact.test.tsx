@@ -19,7 +19,7 @@ const settings = { status: 'success' as const, data: [
 afterEach(cleanup);
 describe('NOTE-02 shared contacts', () => {
   for (const page of ['home', 'about']) {
-    const content = () => page === 'home' ? <HomeContent data={{ settings, news: { status: 'empty' } }} /> : <AboutContent data={{ settings, photos: { status: 'success', data: [] } }} />;
+    const content = () => page === 'home' ? <HomeContent data={{ settings, news: { status: 'empty' } }} /> : <AboutContent data={{ settings }} />;
     it(`${page}: renders three icon rows, independent widget and secure links in SSR`, () => {
       const document = new DOMParser().parseFromString(renderToStaticMarkup(content()), 'text/html');
       const contacts = document.querySelector('[aria-labelledby="contacts-heading"]')!;

@@ -6,7 +6,7 @@ export const dynamic = "force-dynamic";
 
 export async function generateMetadata(): Promise<Metadata> {
   const data = await loadRidesData();
-  return ridesMetadata(data.settings);
+  return ridesMetadata(data);
 }
 
 export default async function RidesPage() {

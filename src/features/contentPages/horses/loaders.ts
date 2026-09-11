@@ -1,7 +1,7 @@
 import { cache } from 'react';
 import { z } from 'zod';
 import { horseDetail, horseList } from '@/api/horse';
-import { validated, listState, loadContentSettings, type DataState } from '../services/loaders';
+import { validated, listState, type DataState } from '../services/loaders';
 
 export const HORSES_FETCH_LIMIT = 100;
 export const HORSES_TIMEOUT_MS = 8000;
@@ -58,8 +58,7 @@ export const loadHorseDetail = cache(async (slug: string): Promise<DataState<Hor
 });
 
 export const loadHorsesData = cache(async () => {
-  const [settings, horses] = await Promise.all([loadContentSettings(), loadHorsesList()]);
-  return { settings, horses };
+  return { horses: await loadHorsesList() };
 });
 
 export const SEX_LABELS: Record<HorseCardDto['sex'], string> = { male: 'Жеребец', female: 'Кобыла', geld: 'Мерин' };

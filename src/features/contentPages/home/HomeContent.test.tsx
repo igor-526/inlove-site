@@ -9,10 +9,10 @@ const empty: Data = { settings: { status: 'empty' }, news: { status: 'empty' } }
 const setting = (key: string, value: string, type = 'string') => ({ key, value, type });
 const news = { id: 'news-id', slug: 'club-news', name: 'Встреча в клубе', snippet: 'Новости лошадей', published_at: '2026-09-09T12:00:00Z', photos: [] };
 describe('Home SSR', () => {
-  it('renders six ordered sections, one h1, four service cards and one latest slug link', () => {
+  it('renders curated ordered sections, one h1, four service cards and one latest slug link', () => {
     const data: Data = { settings: { status: 'success', data: [setting('home.hero_title', 'Заголовок клуба'), setting('home.program_benefits', '[{"title":"Программа"}]', 'object'), setting('home.club_benefits', '[{"title":"Клуб"}]', 'object')] }, news: { status: 'success', data: [news, { ...news, id: 'other', name: 'Лишняя новость' }] } };
     const html = renderToStaticMarkup(<HomeContent data={data} />);
-    expect(html.match(/<section\b/g)).toHaveLength(6);
+    expect(html.match(/<section\b/g)).toHaveLength(4);
     expect(html.match(/<h1\b/g)).toHaveLength(1);
     expect(html).toContain('href="/novosti/club-news"');
     expect(html).toContain('href="/novosti"');
@@ -21,7 +21,7 @@ describe('Home SSR', () => {
     expect(html.match(/class="[^"]*serviceCard[^"]*"/g)).toHaveLength(4);
     expect(html).not.toContain('Стоимость');
     expect(html).not.toContain('Лишняя новость');
-    expect(html.indexOf('Программа')).toBeLessThan(html.indexOf('Встреча в клубе')); 
+    expect(html).not.toContain('Программа');
   });
   it('keeps fallback hero, service routes, contacts and archive when data is empty', () => {
     const html = renderToStaticMarkup(<HomeContent data={empty} />);
@@ -37,7 +37,7 @@ describe('Home SSR', () => {
   });
   it('handles invalid settings locally and escapes plain CMS text and unsafe links', () => {
     const html = renderToStaticMarkup(<HomeContent data={{ ...empty, settings: { status: 'success', data: [setting('home.hero_title', '<script>alert(1)</script>'), setting('home.program_benefits', '{', 'object'), setting('home.club_benefits', '[null,{"title":2},{"title":"Сохраняется"}]', 'object'), setting('contacts.maps_url', 'javascript:alert(1)'), setting('social.vk_url', 'javascript:alert(1)')] } }} />);
-    expect(html).not.toContain('<script>'); expect(html).not.toContain('href="javascript:'); expect(html).toContain('Сохраняется');
+    expect(html).not.toContain('<script>'); expect(html).not.toContain('href="javascript:'); expect(html).not.toContain('Сохраняется');
   });
   it('adapts photo, nullable snippet, encoded slug and tenant date for SSR', () => {
     const html = renderToStaticMarkup(<HomeContent data={{ ...empty,
@@ -56,9 +56,8 @@ describe('Home SSR', () => {
     expect(html).not.toContain('Новости лошадей');
   });
   it('uses page SEO then default SEO and canonical without browser loading', () => {
-    expect(homeMetadata(empty.settings).alternates).toEqual({ canonical: '/' });
-    expect(homeMetadata({ status: 'success', data: [setting('seo.default_title', 'Общий'), setting('seo.default_description', 'Описание')] })).toMatchObject({ title: 'Общий', description: 'Описание' });
-    expect(homeMetadata({ status: 'success', data: [setting('seo.home.title', 'Главная'), setting('seo.default_title', 'Общий')] }).title).toBe('Главная');
+    expect(homeMetadata().alternates).toEqual({ canonical: '/' });
+    expect(homeMetadata()).toMatchObject({ title: 'Инлав' });
   });
 });
 

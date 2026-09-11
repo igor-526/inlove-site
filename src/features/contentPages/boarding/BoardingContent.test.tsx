@@ -14,11 +14,16 @@ const price = (slug: string, name: string, overrides: Partial<Record<string, unk
   photos: [], groups: [], price_tables: [], created_at: "2026-01-01T00:00:00Z", updated_at: null, ...overrides,
 }) as unknown as PriceOutWithTablesDto;
 const boarding = price("horse-boarding-yandex", "Постой частных лошадей");
-const empty: Data = { settings: { status: "empty" }, prices: { status: "empty" } };
+const empty: Data = { group: { status: "empty" }, settings: { status: "empty" }, prices: { status: "empty" } };
+const group: Data["group"] = { status: "success", data: {
+  id: "223e4567-e89b-42d3-a456-426614174000", name: "Постой", slug: "postoy",
+  description: "Постой частных лошадей", price: 0,
+  created_at: "2026-01-01T00:00:00Z", updated_at: null,
+} as never };
 
 describe("Boarding SSR content", () => {
   it("renders one h1, the tariff and the final CTA", () => {
-    const data: Data = {
+    const data: Data = { group,
       settings: { status: "success", data: [] },
       prices: { status: "success", data: [boarding] },
     };
@@ -36,42 +41,31 @@ describe("Boarding SSR content", () => {
   });
 
   it("shows a retry action on price fetch failure without hiding the rest of the page", () => {
-    const data: Data = { ...empty, prices: { status: "error", statusCode: 503 } };
+    const data: Data = { ...empty, group, prices: { status: "error", statusCode: 503 } };
     const { container, getByRole } = render(<BoardingContent data={data} />);
     expect(container.textContent).toContain("Не удалось загрузить стоимость.");
     expect(getByRole("button", { name: "Повторить" })).toBeTruthy();
     expect(getByRole("heading", { name: "Постой" })).toBeTruthy();
   });
 
-  it("hides the 'Что входит' section when services.boarding.included is empty and shows it when populated", () => {
-    const withoutIncluded = render(<BoardingContent data={empty} />);
-    expect(withoutIncluded.queryByText("Что входит")).toBeNull();
-    withoutIncluded.unmount();
-    const data: Data = { settings: { status: "success", data: [setting("services.boarding.included", '["Денник 3х3","Ежедневная уборка"]', "object")] }, prices: { status: "empty" } };
+  it("uses the static included list and ignores removed boarding settings", () => {
+    const data: Data = { group, settings: { status: "success", data: [setting("services.boarding.included", '["LEGACY"]', "object")] }, prices: { status: "empty" } };
     const { container } = render(<BoardingContent data={data} />);
     expect(container.textContent).toContain("Что входит");
-    expect(container.textContent).toContain("Денник 3х3");
-    expect(container.textContent).toContain("Ежедневная уборка");
+    expect(container.textContent).toContain("Безопасное размещение");
+    expect(container.textContent).not.toContain("LEGACY");
   });
 
-  it("renders requirements and only editorially-approved about.features, filtering out unapproved entries", () => {
-    const data: Data = { settings: { status: "success", data: [
-      setting("services.boarding.requirements", '["Прививки по графику"]', "object"),
-      setting("about.features", JSON.stringify([
-        { label: "Ветеринарный врач", value: true, approved: true },
-        { label: "Пандус", value: true },
-      ]), "object"),
-    ] }, prices: { status: "empty" } };
-    const { container, queryByText } = render(<BoardingContent data={data} />);
+  it("renders static requirements and ignores removed about/features settings", () => {
+    const data: Data = { group, settings: { status: "success", data: [setting("services.boarding.requirements", '["LEGACY"]', "object"), setting("about.features", '["LEGACY"]', "object")] }, prices: { status: "empty" } };
+    const { container } = render(<BoardingContent data={data} />);
     expect(container.textContent).toContain("Требования и знакомство с клубом");
-    expect(container.textContent).toContain("Прививки по графику");
-    expect(container.textContent).toContain("Ветеринарный врач");
-    expect(queryByText("Пандус")).toBeNull();
+    expect(container.textContent).toContain("Условия размещения и наличие мест подтверждаются");
+    expect(container.textContent).not.toContain("LEGACY");
   });
 
-  it("uses seeded SEO then short_name fallback and canonical path", () => {
+  it("uses static SEO and ignores removed SEO/short-name settings", () => {
     expect(boardingMetadata(empty.settings)).toMatchObject({ title: "Инлав | Постой", alternates: { canonical: "/uslugi/postoy" } });
-    expect(boardingMetadata({ status: "success", data: [setting("site.short_name", "Инлав-Клуб")] }).title).toBe("Инлав-Клуб | Постой");
-    expect(boardingMetadata({ status: "success", data: [setting("seo.boarding.title", "Постой — заголовок")] }).title).toBe("Постой — заголовок");
+    expect(boardingMetadata({ status: "success", data: [setting("site.short_name", "LEGACY"), setting("seo.boarding.title", "LEGACY")] }).title).toBe("Инлав | Постой");
   });
 });

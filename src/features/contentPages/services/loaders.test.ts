@@ -7,7 +7,8 @@ vi.mock('react', async () => {
   const require = createRequire(import.meta.url);
   return require(join(dirname(require.resolve('react/package.json')), 'cjs/react.react-server.development.js'));
 });
-import { loadNewsArchive, loadNewsDetail, loadHomeData, loadAboutData, normalizeNewsPage, CONTENT_TIMEOUT_MS } from './loaders';
+import { loadNewsArchive, loadNewsDetail, loadHomeData, loadAboutData, normalizeNewsPage, CONTENT_TIMEOUT_MS, HOME_SETTING_KEYS } from './loaders';
+import { loadHorsesData } from '../horses/loaders';
 const item = { id: '123e4567-e89b-42d3-a456-426614174000', slug: 'news', name: 'News', snippet: null, published_at: '2026-09-01T00:00:00Z', photos: [] };
 const fetcher = vi.fn();
 beforeEach(() => {
@@ -44,11 +45,19 @@ it('passes bounded abort signal and treats timeout as error', async () => {
   expect(await loadNewsDetail('news')).toMatchObject({ status: 'error' });
   expect(timeout).toHaveBeenCalledWith(CONTENT_TIMEOUT_MS); timeout.mockRestore();
 });
-it('home and about keep independent successful settings when entity blocks fail', async () => {
-  fetcher.mockImplementation(async (url: string) => url.includes('site_settings') ? response([{ key: 'about.intro', type: 'string', value: 'Intro' }]) : response({ detail: 'Unavailable' }, 503));
+it('home/about request only the curated keys and no action-1/action-5/legacy consumers', async () => {
+  fetcher.mockImplementation(async (url: string) => url.includes('site_settings') ? response([{ key: 'about_1_title', type: 'string', value: 'О клубе' }]) : response({ detail: 'Unavailable' }, 503));
   expect(await loadHomeData()).toMatchObject({ settings: { status: 'success' }, news: { status: 'error' } });
-  expect(await loadAboutData()).toMatchObject({ settings: { status: 'success' }, photos: { status: 'error' } });
-  expect(fetcher.mock.calls.some(([url]) => url.endsWith('/photos?limit=24&sort=created_at'))).toBe(true);
+  expect(await loadAboutData()).toMatchObject({ settings: { status: 'success' } });
+  expect(fetcher.mock.calls.some(([url]) => url.endsWith('/photos?limit=24&sort=created_at'))).toBe(false);
+  const settingsUrls = fetcher.mock.calls.map(([url]) => String(url)).filter((url) => url.includes('/site_settings'));
+  const requestedKeys = settingsUrls.flatMap((url) => new URL(url).searchParams.getAll('key'));
+  expect(new Set(requestedKeys)).toEqual(new Set([
+    'home.hero_title', 'home.hero_subtitle', 'about_1_title', 'about_1_text', 'about_2_title', 'about_2_text',
+    'footer.description', 'footer.copyright_name', 'contacts.address', 'contacts.primary_phone', 'contacts.coordinates',
+    'contacts.maps_url', 'contacts.nearest_stop', 'contacts.working_hours', 'social.vk_url', 'social.instagram_url',
+  ]));
+  expect(requestedKeys.join(' ')).not.toMatch(/(^|\s)(header\.|callback\.|seo\.|services\.|team\.|reviews\.|about\.(intro|setting|features)|contacts\.(phones|address_alternative))|home\.(hero_cta_label|program_benefits|club_benefits)/);
 });
 it('home uses only anonymous settings/news and never fetches prices', async () => {
   vi.stubEnv('NEXT_PUBLIC_EQUESTRIAN_SERVICE_KEY', 'inlove');
@@ -61,6 +70,22 @@ it('home uses only anonymous settings/news and never fetches prices', async () =
     expect(options.headers.get('Cookie')).toBeNull();
     expect(options.headers.get('X-Equestrian-Service-Key')).toBe('inlove');
   }
+});
+it('home/horses/news request exactly the page allowlist and never use an unbounded settings query', async () => {
+  fetcher.mockImplementation(async (url: string) => {
+    if (url.includes('/site_settings')) return response([]);
+    if (url.includes('/horses')) return response({ total: 0, items: [] });
+    if (url.includes('/news/by-slug/')) return response({ detail: 'Missing' }, 404);
+    if (url.includes('/news')) return response({ total: 0, items: [] });
+    return response({ detail: 'Unexpected' }, 500);
+  });
+  await Promise.all([loadHomeData(), loadHorsesData(), loadNewsArchive(), loadNewsDetail('missing')]);
+  const settingsUrls = fetcher.mock.calls.map(([url]) => String(url)).filter((url) => url.includes('/site_settings'));
+  expect(settingsUrls).toHaveLength(1);
+  const url = new URL(settingsUrls[0]);
+  expect(url.searchParams.has('limit')).toBe(false);
+  expect(url.searchParams.getAll('key')).toEqual([...HOME_SETTING_KEYS]);
+  expect(url.searchParams.getAll('key').join(' ')).not.toMatch(/header\.|callback\.|seo\.|services\.|horses\.|news\.|site\.timezone|team\.|reviews\.|contacts\.(phones|address_alternative)|home\.(hero_cta_label|program_benefits|club_benefits)/);
 });
 it.each(['0', '-1', '1.2', '01', '', 'abc', ['2'], '9007199254740992'])('normalizes invalid page %s', input => {
   expect(normalizeNewsPage(input)).toEqual({ page: 1, redirect: true });

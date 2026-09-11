@@ -26,7 +26,7 @@ it.each(FUTURE_PLACEHOLDER_ROUTES)('retains chrome and callback around $path', (
   fireEvent.click(screen.getAllByRole('button', { name: FALLBACK_SHARED_SETTINGS.headerCtaLabel })[0]);
   expect(screen.getByRole('dialog', { name: FALLBACK_SHARED_SETTINGS.callback.title })).toBeTruthy();
   const policyLink = screen.getByRole('link', { name: 'Политика' });
-  expect(policyLink.getAttribute('href')).toBe('/about#privacy');
+  expect(policyLink.getAttribute('href')).toBe('/privacy');
   policyLink.focus();
   expect(document.activeElement).toBe(policyLink);
   expect(screen.getByRole('checkbox')).toBeTruthy();

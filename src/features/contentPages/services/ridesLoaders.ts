@@ -1,6 +1,7 @@
 import { cache } from 'react';
-import { loadContentSettings } from './loaders';
 import { createPriceGroupLoaders } from './pricesLoaders';
+import { loadServiceGroup } from './serviceGroups';
+import type { DataState } from './loaders';
 
 /** scheme.md "Услуги / Прогулки": `GET /api/prices?name=Конные прогулки&name=Конная прогулка`. */
 export const RIDES_NAME_QUERY: string[] = ['Конные прогулки', 'Конная прогулка'];
@@ -17,6 +18,6 @@ export const loadRidesList = loadList;
 export const loadRidesDetail = loadDetail;
 
 export const loadRidesData = cache(async () => {
-  const [settings, prices] = await Promise.all([loadContentSettings(), loadRidesList()]);
-  return { settings, prices };
+  const [group, prices] = await Promise.all([loadServiceGroup('progulki'), loadRidesList()]);
+  return { group, prices, settings: { status: 'empty' } as DataState<{ key: string; value: string; type: string }[]> };
 });

@@ -10,18 +10,15 @@ vi.mock("@/features/contentPages/services/loaders", async (original) => {
 
 const loadAboutDataMock = vi.mocked(loadAboutData);
 
-describe("/about privacy fallback target", () => {
-  it("renders an accessible privacy anchor in server HTML", async () => {
+describe("/about curated content", () => {
+  it("does not restore the removed privacy block", async () => {
     loadAboutDataMock.mockResolvedValue({
       settings: { status: "success", data: [] },
-      photos: { status: "success", data: [] },
     });
 
     const html = renderToStaticMarkup(await AboutPage());
 
-    expect(html).toContain('id="privacy"');
-    expect(html).toContain('aria-labelledby="privacy-heading"');
-    expect(html).toContain('id="privacy-heading"');
-    expect(html).toContain("Обработка персональных данных");
+    expect(html).not.toContain('id="privacy"');
+    expect(html).not.toContain("Обработка персональных данных");
   });
 });

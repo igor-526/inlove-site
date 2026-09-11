@@ -69,11 +69,12 @@ it('detail: keeps other upstream failures as error, distinct from not-found', as
   expect(await loadLessonsDetail(LESSONS_ALLOWED_SLUGS[0])).toEqual({ status: 'error', statusCode: 503 });
 });
 
-it('aggregates settings and prices independently for the page loader', async () => {
+it('does not request removed page settings while preserving the price failure', async () => {
   fetcher.mockImplementation(async (url: string) => url.includes('site_settings')
     ? response([{ key: 'services.notice', type: 'string', value: 'Оплата на месте' }])
     : response({ detail: 'Unavailable' }, 503));
   const data = await loadLessonsData();
-  expect(data.settings).toMatchObject({ status: 'success' });
+  expect(data.settings).toEqual({ status: 'empty' });
+  expect(fetcher.mock.calls.some(([url]) => String(url).includes('site_settings'))).toBe(false);
   expect(data.prices).toEqual({ status: 'error', statusCode: 503 });
 });

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { loadNewsDetail, loadContentSettings, settingText } from "@/features/contentPages/services/loaders";
+import { loadNewsDetail } from "@/features/contentPages/services/loaders";
+import { SITE_CONSUMER_CONFIG } from "@/features/siteSettings";
 import { NewsDetail, detailHref } from "@/features/contentPages/newsDetail/NewsDetail";
 import { contentPlainText } from "@/lib/content/sanitize";
 
@@ -29,7 +30,6 @@ export async function generateMetadata(props: Props): Promise<Metadata> {
 }
 
 export default async function NewsDetailPage(props: Props) {
-  const [{ slug, state }, settings] = await Promise.all([readDetail(props), loadContentSettings()]);
-  const timezone = settings.status === "success" ? settingText(settings.data, "site.timezone") : undefined;
-  return <NewsDetail state={state} slug={slug} timezone={timezone ?? "Europe/Moscow"} />;
+  const { slug, state } = await readDetail(props);
+  return <NewsDetail state={state} slug={slug} timezone={SITE_CONSUMER_CONFIG.news.timezone} />;
 }

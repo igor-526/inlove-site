@@ -66,13 +66,13 @@ describe("CT-CB-02..08/CT-NOTE-CB-01 CallbackModal", () => {
     fireEvent.submit(screen.getByRole("button", { name: FALLBACK_SHARED_SETTINGS.callback.submitLabel }).closest("form")!);
     await waitFor(() => expect(document.activeElement).toBe(screen.getByLabelText(/Телефон/)));
     expect(screen.getByRole("checkbox").getAttribute("aria-invalid")).toBe("true");
-    expect(screen.getByRole("link", { name: "Политика" }).getAttribute("href")).toBe("/about#privacy");
+    expect(screen.getByRole("link", { name: "Политика" }).getAttribute("href")).toBe("/privacy");
     expect(sendMock).not.toHaveBeenCalled();
   });
 
   it.each(["", "javascript:alert(1)", "//example.com/policy"])("uses the policy fallback while keeping mandatory consent for %s", async (policyUrl) => {
     renderModal({ policyUrl });
-    expect(screen.getByRole("link", { name: "Политика" }).getAttribute("href")).toBe("/about#privacy");
+    expect(screen.getByRole("link", { name: "Политика" }).getAttribute("href")).toBe("/privacy");
     fireEvent.change(screen.getByLabelText(/Телефон/), { target: { value: "+79991234567" } });
     fireEvent.submit(screen.getByRole("button", { name: FALLBACK_SHARED_SETTINGS.callback.submitLabel }).closest("form")!);
     await waitFor(() => expect(document.activeElement).toBe(screen.getByRole("checkbox")));
@@ -80,10 +80,15 @@ describe("CT-CB-02..08/CT-NOTE-CB-01 CallbackModal", () => {
     expect(sendMock).not.toHaveBeenCalled();
   });
 
-  it.each(["https://example.com/policy", "/documents/policy.pdf", "/about#privacy", "/about/?source=form#privacy"])("preserves configured policy URL %s", (policyUrl) => {
+  it.each(["https://example.com/policy", "/documents/policy.pdf", "/about/?source=form#privacy"])("preserves configured policy URL %s", (policyUrl) => {
     renderModal({ policyUrl });
     expect(screen.getByRole("link", { name: "Политика" }).getAttribute("href")).toBe(policyUrl);
     expect((screen.getByRole("checkbox") as HTMLInputElement).checked).toBe(false);
+  });
+
+  it("reroutes the removed legacy privacy fragment to the static policy page", () => {
+    renderModal({ policyUrl: "/about#privacy" });
+    expect(screen.getByRole("link", { name: "Политика" }).getAttribute("href")).toBe("/privacy");
   });
 
   it("submits one exact contract payload, preserves geometry while pending, then shows a persistent success", async () => {

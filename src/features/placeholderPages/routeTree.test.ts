@@ -10,10 +10,10 @@ function pageRoutes(directory: string, route = ""): string[] {
   });
 }
 
-/** The seven approved main routes (`inlove-placeholder-pages` MODIFIED requirement): none of
+/** The seven primary routes plus the static policy target: none of
  * them is a placeholder any more — `/uslugi/zanyatiya`, `/uslugi/progulki`, `/uslugi/postoy` and
  * `/loshadi` were replaced with real SSR content by inlove-dynamic-pages (SC-1..SC-4). */
-const MAIN_ROUTES = ["/", "/uslugi/zanyatiya", "/uslugi/progulki", "/uslugi/postoy", "/loshadi", "/novosti", "/about"];
+const MAIN_ROUTES = ["/", "/uslugi/zanyatiya", "/uslugi/progulki", "/uslugi/postoy", "/loshadi", "/novosti", "/about", "/privacy"];
 
 /** The five approved detail route families: `/novosti/[slug]` predates inlove-dynamic-pages,
  * the other four were added by SC-1..SC-4. No other `[slug]`/catch-all route exists, so anything
@@ -30,7 +30,7 @@ describe("UT-SC-11 route boundary", () => {
   const appDirectory = path.resolve(process.cwd(), "src/app");
   const source = (route: string) => readFileSync(path.join(appDirectory, route, "page.tsx"), "utf8");
 
-  it("serves seven main pages plus only the five approved slug detail routes", () => {
+  it("serves the primary pages, static policy target, and only the five approved slug detail routes", () => {
     expect(pageRoutes(appDirectory).sort()).toEqual([...MAIN_ROUTES, ...DETAIL_ROUTES].sort());
     // With no catch-all route/rewrite, unknown paths are handled by Next's 404.
     expect(pageRoutes(appDirectory).filter((route) => route.includes("[")).sort()).toEqual([...DETAIL_ROUTES].sort());

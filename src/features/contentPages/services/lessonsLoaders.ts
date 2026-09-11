@@ -1,6 +1,7 @@
 import { cache } from 'react';
-import { loadContentSettings } from './loaders';
 import { createPriceGroupLoaders } from './pricesLoaders';
+import { loadServiceGroup } from './serviceGroups';
+import type { DataState } from './loaders';
 
 export const LESSONS_GROUP_NAME = 'Основные услуги';
 
@@ -39,6 +40,6 @@ export const loadLessonsList = loadList;
 export const loadLessonsDetail = loadDetail;
 
 export const loadLessonsData = cache(async () => {
-  const [settings, prices] = await Promise.all([loadContentSettings(), loadLessonsList()]);
-  return { settings, prices };
+  const [group, prices] = await Promise.all([loadServiceGroup('zanyatiya'), loadLessonsList()]);
+  return { group, prices, settings: { status: 'empty' } as DataState<{ key: string; value: string; type: string }[]> };
 });

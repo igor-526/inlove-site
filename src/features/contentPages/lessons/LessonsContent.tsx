@@ -1,36 +1,36 @@
 import type { Metadata } from "next";
-import { BenefitsSection, IntroSection, type BenefitItem } from "@/ui/sections";
-import { settingObject, settingText } from "../services/loaders";
+import { BenefitsSection, IntroSection } from "@/ui/sections";
 import type { loadLessonsData } from "../services/lessonsLoaders";
 import { LessonsPrices } from "./LessonsPrices";
 import { LessonsCta } from "./LessonsCta";
 
 type LessonsData = Awaited<ReturnType<typeof loadLessonsData>>;
 
-function benefits(value: unknown): BenefitItem[] {
-  if (!Array.isArray(value)) return [];
-  return value.flatMap((item) => item && typeof item.title === "string" && item.title.trim()
-    ? [{ title: item.title.trim(), text: typeof item.text === "string" ? item.text : undefined }] : []);
-}
+const PROGRAM_BENEFITS = [
+  { title: "Бережный подход", text: "Формат занятия подбирается под опыт и цели всадника." },
+  { title: "Последовательное обучение", text: "От знакомства с лошадью к уверенной самостоятельной работе." },
+];
 
-export function lessonsMetadata(state: LessonsData["settings"]): Metadata {
-  const items = state.status === "success" ? state.data : [];
-  const shortName = settingText(items, "site.short_name");
+export function lessonsMetadata(input: LessonsData | LessonsData["settings"]): Metadata {
+  const group = "group" in input ? input.group : { status: "empty" as const };
+  const description = group.status === "success" && group.data.description.trim()
+    ? group.data.description.trim() : "Разовые занятия и абонементы конного клуба «Инлав»: индивидуальные и групповые тренировки.";
   return {
-    title: settingText(items, "seo.lessons.title")
-      ?? (shortName ? `${shortName} | Занятия и абонементы` : "Инлав | Занятия и абонементы"),
-    description: settingText(items, "seo.lessons.description")
-      ?? "Разовые занятия и абонементы конного клуба «Инлав»: индивидуальные и групповые тренировки.",
+    title: "Инлав | Занятия и абонементы",
+    description,
     alternates: { canonical: "/uslugi/zanyatiya" },
   };
 }
 
 export function LessonsContent({ data }: { data: LessonsData }) {
-  const settings = data.settings.status === "success" ? data.settings.data : [];
+  const body = data.group.status === "success" ? data.group.data.description : undefined;
+  const prices = data.group.status === "success" ? data.prices : { status: "empty" as const };
   return <>
-    <IntroSection headingLevel={1} title="Занятия и абонементы" body={settingText(settings, "services.lessons.intro")} />
-    <LessonsPrices prices={data.prices} notice={settingText(settings, "services.notice")} />
-    <BenefitsSection title="Почему выбирают наши программы" items={benefits(settingObject(settings, "home.program_benefits"))} />
-    <LessonsCta label={settingText(settings, "services.lessons.cta_label") ?? "Записаться на занятие"} />
+    <IntroSection headingLevel={1} title="Занятия и абонементы" body={body} />
+    {data.group.status === "error" ? <p role="alert">Не удалось загрузить описание услуги.</p> : null}
+    {data.group.status === "empty" ? <p role="status">Услуга «Занятия» временно недоступна.</p> : null}
+    <LessonsPrices prices={prices} />
+    <BenefitsSection title="Почему выбирают наши программы" items={PROGRAM_BENEFITS} />
+    <LessonsCta label="Записаться на занятие" />
   </>;
 }

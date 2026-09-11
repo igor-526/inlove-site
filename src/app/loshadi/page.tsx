@@ -5,8 +5,7 @@ import { HorsesContent, horsesMetadata } from "@/features/contentPages/horses/Ho
 export const dynamic = "force-dynamic";
 
 export async function generateMetadata(): Promise<Metadata> {
-  const data = await loadHorsesData();
-  return horsesMetadata(data.settings);
+  return horsesMetadata();
 }
 
 export default async function HorsesPage() {

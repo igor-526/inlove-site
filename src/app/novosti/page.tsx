@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
-import { loadContentSettings, loadNewsArchive, normalizeNewsPage, settingText } from "@/features/contentPages/services/loaders";
+import { loadNewsArchive, normalizeNewsPage } from "@/features/contentPages/services/loaders";
+import { SITE_CONSUMER_CONFIG } from "@/features/siteSettings";
 import { NewsArchive, archiveHref } from "@/features/contentPages/newsArchive/NewsArchive";
 
 export const dynamic = "force-dynamic";
@@ -9,27 +10,26 @@ type Props = { searchParams: Promise<{ page?: string | string[] }> };
 async function readPage({ searchParams }: Props) {
   const normalized = normalizeNewsPage((await searchParams).page);
   if (normalized.redirect) redirect("/novosti");
-  const [state, settings] = await Promise.all([loadNewsArchive(normalized.page), loadContentSettings()]);
+  const state = await loadNewsArchive(normalized.page);
   if (state.status === "not-found") notFound();
-  return { page: normalized.page, state, settings: settings.status === "success" ? settings.data : [] };
+  return { page: normalized.page, state };
 }
 
 export async function generateMetadata(props: Props): Promise<Metadata> {
-  const { page, state, settings } = await readPage(props);
-  const title = settingText(settings, "seo.news.title") ?? "Инлав | Новости";
+  const { page, state } = await readPage(props);
+  const title = SITE_CONSUMER_CONFIG.seo.newsTitle;
   return {
     title: page === 1 ? title : `${title} — страница ${page}`,
-    description: settingText(settings, "seo.news.description") ?? settingText(settings, "seo.default_description") ?? "Новости и жизнь конного клуба «Инлав».",
+    description: SITE_CONSUMER_CONFIG.seo.newsDescription,
     alternates: { canonical: archiveHref(page) },
     ...(state.status === "error" ? { robots: { index: false, follow: true } } : {}),
   };
 }
 
 export default async function NewsPage(props: Props) {
-  const { page, state, settings } = await readPage(props);
+  const { page, state } = await readPage(props);
   return <NewsArchive state={state} page={page}
-    intro={settingText(settings, "news.intro")}
-    emptyText={settingText(settings, "news.empty_text") ?? "Новостей пока нет"}
-    nextLabel={settingText(settings, "news.load_more_label") ?? "Следующая страница"}
-    timezone={settingText(settings, "site.timezone") ?? "Europe/Moscow"} />;
+    emptyText={SITE_CONSUMER_CONFIG.news.emptyText}
+    nextLabel={SITE_CONSUMER_CONFIG.news.nextLabel}
+    timezone={SITE_CONSUMER_CONFIG.news.timezone} />;
 }

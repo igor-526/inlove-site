@@ -6,7 +6,7 @@ export const dynamic = "force-dynamic";
 
 export async function generateMetadata(): Promise<Metadata> {
   const data = await loadBoardingData();
-  return boardingMetadata(data.settings);
+  return boardingMetadata(data);
 }
 
 export default async function BoardingPage() {

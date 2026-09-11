@@ -1,12 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { renderToStaticMarkup } from "react-dom/server";
 import Page, { dynamic, generateMetadata } from "@/app/novosti/[slug]/page";
-import { loadContentSettings, loadNewsDetail } from "../services/loaders";
+import { loadNewsDetail } from "../services/loaders";
 import type { NewsPublicDetailOutDto } from "@/types/news";
 
 vi.mock("../services/loaders", async (original) => ({
   ...await original<typeof import("../services/loaders")>(),
-  loadNewsDetail: vi.fn(), loadContentSettings: vi.fn(),
+  loadNewsDetail: vi.fn(),
 }));
 vi.mock("next/navigation", () => ({ notFound: () => { throw new Error("route-404"); } }));
 const props = () => ({ params: Promise.resolve({ slug: "stable-slug" }) });
@@ -17,7 +17,6 @@ const news: NewsPublicDetailOutDto = {
 };
 beforeEach(() => {
   vi.mocked(loadNewsDetail).mockResolvedValue({ status: "success", data: news });
-  vi.mocked(loadContentSettings).mockResolvedValue({ status: "empty" });
 });
 
 describe("UT-SC-09 direct server entry", () => {
@@ -39,10 +38,7 @@ describe("UT-SC-09 direct server entry", () => {
     vi.mocked(loadNewsDetail).mockResolvedValue({ status: "success", data: { ...news, snippet: null, content: "<p>Полный <em>текст</em></p>" } });
     expect((await generateMetadata(props())).description).toBe("Полный текст");
   });
-  it("uses site timezone and survives invalid timezone and no photos", async () => {
-    vi.mocked(loadContentSettings).mockResolvedValue({ status: "success", data: [{ key: "site.timezone", type: "string", value: "UTC" }] });
-    expect(renderToStaticMarkup(await Page(props()))).toContain("1 сентября 2026");
-    vi.mocked(loadContentSettings).mockResolvedValue({ status: "success", data: [{ key: "site.timezone", type: "string", value: "invalid" }] });
+  it("uses configured timezone and survives no photos", async () => {
     vi.mocked(loadNewsDetail).mockResolvedValue({ status: "success", data: { ...news, photos: [] } });
     expect(renderToStaticMarkup(await Page(props()))).toContain("2 сентября 2026");
   });
