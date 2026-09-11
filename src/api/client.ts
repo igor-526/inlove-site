@@ -69,7 +69,7 @@ export function resolveApiBaseUrl() {
 }
 
 export function resolveEquestrianServiceKey() {
-  return (process.env.NEXT_PUBLIC_EQUESTRIAN_SERVICE_KEY ?? "default").trim();
+  return process.env.NEXT_PUBLIC_EQUESTRIAN_SERVICE_KEY?.trim() ?? "";
 }
 
 export function buildHeaders(options?: RequestInit) {
@@ -78,15 +78,17 @@ export function buildHeaders(options?: RequestInit) {
     "Content-Type": "application/json",
   });
 
-  for (const [key, value] of Object.entries(normalizeHeaders(options?.headers))) {
-    headers.set(key, value);
-  }
+  const callerHeaders = new Headers(normalizeHeaders(options?.headers));
+  callerHeaders.delete("Authorization");
+  callerHeaders.delete("Cookie");
+  callerHeaders.delete("X-Equestrian-Service-Key");
+  callerHeaders.forEach((value, key) => headers.set(key, value));
 
   const serviceKey = resolveEquestrianServiceKey();
-
-  if (serviceKey) {
-    headers.set("X-Equestrian-Service-Key", serviceKey);
+  if (!serviceKey) {
+    throw new ApiConfigurationError("NEXT_PUBLIC_EQUESTRIAN_SERVICE_KEY must be configured");
   }
+  headers.set("X-Equestrian-Service-Key", serviceKey);
 
   return headers;
 }

@@ -15,9 +15,11 @@ afterEach(() => {
 });
 
 describe("public read client", () => {
-  it("builds stable API URLs and query parameters (UT-IL-01)", () => {
-    process.env.NEXT_PUBLIC_API_BASE_URL = "https://api.example.test";
+  it("trims valid API URL and selector configuration (UT-API-01)", () => {
+    process.env.NEXT_PUBLIC_API_BASE_URL = "  https://api.example.test  ";
+    process.env.NEXT_PUBLIC_EQUESTRIAN_SERVICE_KEY = "  inlove  ";
     expect(resolveApiBaseUrl()).toBe("https://api.example.test/api");
+    expect(resolveEquestrianServiceKey()).toBe("inlove");
     expect(addQueryParamsToUrl("/horses?active=true#list", { page: 2, tag: ["a", "b"] }))
       .toBe("/horses?active=true&page=2&tag=a&tag=b#list");
   });
@@ -43,13 +45,13 @@ describe("public read client", () => {
     }
   );
 
-  it("adds selector to anonymous GET and removes CMS credentials (UT-IL-02)", async () => {
+  it("adds selector to anonymous GET and removes CMS credentials (UT-API-02)", async () => {
     process.env.NEXT_PUBLIC_API_BASE_URL = "https://api.example.test/api";
     process.env.NEXT_PUBLIC_EQUESTRIAN_SERVICE_KEY = " inlove ";
     const fetchMock = vi.fn().mockResolvedValue({ ok: true, status: 200, text: async () => "{\"items\":[]}" });
     vi.stubGlobal("fetch", fetchMock);
 
-    await apiFetch("/horses", { headers: { Authorization: "Bearer cms", Cookie: "session=cms" } });
+    await apiFetch("/horses", { headers: { authorization: "Bearer cms", COOKIE: "session=cms" } });
 
     const [, options] = fetchMock.mock.calls[0] as [string, RequestInit];
     const headers = new Headers(options.headers);
@@ -73,24 +75,24 @@ describe("public read client", () => {
     expect(new Headers(options.headers).get("X-Equestrian-Service-Key")).toBe("inlove");
   });
 
-  it("removes a caller selector when the configured selector is missing (UT-IL-03)", async () => {
+  it("fails safely without fetching when the configured selector is missing (UT-API-03)", async () => {
+    process.env.NEXT_PUBLIC_API_BASE_URL = "https://api.example.test/api";
     process.env.NEXT_PUBLIC_EQUESTRIAN_SERVICE_KEY = "   ";
     process.env.EQUESTRIAN_SERVICE_KEY = "foreign-tenant";
-    const fetchMock = vi.fn().mockResolvedValue({ ok: false, status: 401, statusText: "Unauthorized", text: async () => "{\"detail\":\"Missing selector\"}" });
+    const fetchMock = vi.fn();
     vi.stubGlobal("fetch", fetchMock);
 
     expect(resolveEquestrianServiceKey()).toBe("");
-    expect(buildHeaders({ headers: { "X-Equestrian-Service-Key": "foreign-tenant" } }).has("X-Equestrian-Service-Key")).toBe(false);
+    expect(() => buildHeaders({ headers: { "X-Equestrian-Service-Key": "foreign-tenant" } })).toThrow(
+      /NEXT_PUBLIC_EQUESTRIAN_SERVICE_KEY/
+    );
     await expect(apiFetch("/horses", {
       headers: { "X-Equestrian-Service-Key": "foreign-tenant" },
     })).resolves.toEqual({
       status: "error",
-      statusCode: 401,
-      data: { detail: "Missing selector" },
+      data: { detail: "Public API is not configured" },
     });
-
-    const [, options] = fetchMock.mock.calls[0] as [string, RequestInit];
-    expect(new Headers(options.headers).has("X-Equestrian-Service-Key")).toBe(false);
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 
   it("blocks every write except the callback exception", async () => {
@@ -106,14 +108,16 @@ describe("public read client", () => {
   it.each([
     ["non-2xx", { ok: false, status: 401, statusText: "Unauthorized", text: async () => "{\"detail\":\"Invalid selector\"}" }, { status: "error", statusCode: 401, data: { detail: "Invalid selector" } }],
     ["invalid JSON", { ok: true, status: 200, statusText: "OK", text: async () => "not-json" }, { status: "error", data: { detail: "Network error or invalid JSON" } }],
-  ])("normalizes %s responses (UT-IL-05)", async (_label, response, expected) => {
+  ])("normalizes %s responses (UT-API-04)", async (_label, response, expected) => {
     process.env.NEXT_PUBLIC_API_BASE_URL = "https://api.example.test/api";
+    process.env.NEXT_PUBLIC_EQUESTRIAN_SERVICE_KEY = "inlove";
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue(response));
     await expect(apiFetch("/horses")).resolves.toEqual(expected);
   });
 
   it("normalizes network errors without exposing details (UT-IL-05)", async () => {
     process.env.NEXT_PUBLIC_API_BASE_URL = "https://api.example.test/api";
+    process.env.NEXT_PUBLIC_EQUESTRIAN_SERVICE_KEY = "inlove";
     vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new Error("secret upstream URL")));
     await expect(apiFetch("/horses")).resolves.toEqual({
       status: "error",

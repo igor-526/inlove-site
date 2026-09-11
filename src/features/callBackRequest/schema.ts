@@ -1,11 +1,25 @@
 import { z } from "zod";
 
+export const CALLBACK_NAME_MAX_LENGTH = 127;
+export const CALLBACK_PHONE_MAX_LENGTH = 63;
+export const CALLBACK_COMMENT_MAX_LENGTH = 2000;
+export const CALLBACK_COMMENT_MAX_ERROR = "Комментарий с выбранным контекстом не должен превышать 2000 символов";
+
+const optionalTrimmedString = (maxLength: number, message: string) => z.string()
+  .trim()
+  .max(maxLength, message)
+  .transform((value) => value || undefined);
+
 export const callbackFormSchema = z.object({
-  name: z.string().trim().max(127, "Имя не должно превышать 127 символов"),
-  phone: z.string().trim().min(1, "Укажите телефон").max(63, "Телефон не должен превышать 63 символа"),
-  comment: z.string().trim().max(2000, "Комментарий не должен превышать 2000 символов"),
+  name: optionalTrimmedString(CALLBACK_NAME_MAX_LENGTH, "Имя не должно превышать 127 символов"),
+  phone: z.string().trim().min(1, "Укажите телефон").max(CALLBACK_PHONE_MAX_LENGTH, "Телефон не должен превышать 63 символа"),
+  comment: optionalTrimmedString(CALLBACK_COMMENT_MAX_LENGTH, "Комментарий не должен превышать 2000 символов"),
   consent: z.literal(true, { error: "Подтвердите согласие на обработку данных" }),
 });
+
+export const composedCallbackCommentSchema = z.string()
+  .max(CALLBACK_COMMENT_MAX_LENGTH, CALLBACK_COMMENT_MAX_ERROR)
+  .optional();
 
 export type CallbackFormValues = z.infer<typeof callbackFormSchema>;
 
@@ -27,11 +41,10 @@ export function formatCallbackContext(context: CallbackContext): string {
   return lines.filter(Boolean).join("\n");
 }
 
-export function appendCallbackContext(comment: string, context: CallbackContext): string | undefined {
-  const contextText = formatCallbackContext(context).slice(0, 2000);
-  const cleanComment = comment.trim();
+export function appendCallbackContext(comment: string | undefined, context: CallbackContext): string | undefined {
+  const contextText = formatCallbackContext(context);
+  const cleanComment = comment?.trim() ?? "";
   if (!contextText) return cleanComment || undefined;
   if (!cleanComment) return contextText;
-  const availableForComment = Math.max(0, 2000 - contextText.length - 2);
-  return `${cleanComment.slice(0, availableForComment)}\n\n${contextText}`.slice(-2000);
+  return `${cleanComment}\n\n${contextText}`;
 }

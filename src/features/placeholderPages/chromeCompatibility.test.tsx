@@ -18,7 +18,10 @@ it.each(['lessons', 'rides', 'boarding', 'horses'] as const)('retains chrome and
   expect(screen.getByText(/раздел находится в разработке/i)).toBeTruthy();
   fireEvent.click(screen.getAllByRole('button', { name: FALLBACK_SHARED_SETTINGS.headerCtaLabel })[0]);
   expect(screen.getByRole('dialog', { name: FALLBACK_SHARED_SETTINGS.callback.title })).toBeTruthy();
-  expect(screen.queryByRole('link', { name: 'Политика' })).toBeNull();
+  const policyLink = screen.getByRole('link', { name: 'Политика' });
+  expect(policyLink.getAttribute('href')).toBe('/about#privacy');
+  policyLink.focus();
+  expect(document.activeElement).toBe(policyLink);
   expect(screen.getByRole('checkbox')).toBeTruthy();
   fireEvent.click(screen.getByRole('button', { name: 'Закрыть форму' }));
   expect(screen.queryByRole('dialog')).toBeNull();

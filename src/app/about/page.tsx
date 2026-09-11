@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { AboutContent } from '@/features/contentPages/about/AboutContent';
 import { loadAboutData, loadContentSettings, settingText } from '@/features/contentPages/services/loaders';
 import { contentPlainText } from '@/lib/content/sanitize';
+import { PrivacySection } from '@/ui/sections';
 
 export const dynamic = 'force-dynamic';
 export async function generateMetadata(): Promise<Metadata> {
@@ -14,5 +15,8 @@ export async function generateMetadata(): Promise<Metadata> {
   };
 }
 export default async function AboutPage() {
-  return <AboutContent data={await loadAboutData()} />;
+  return <>
+    <AboutContent data={await loadAboutData()} />
+    <PrivacySection />
+  </>;
 }

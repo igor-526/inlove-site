@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { renderToStaticMarkup } from 'react-dom/server';
+import { readFileSync } from 'node:fs';
 import { HomeContent, homeMetadata } from './HomeContent';
 import type { loadHomeData } from '../services/loaders';
 vi.mock('@/api/client', () => ({ default: vi.fn() }));
@@ -58,5 +59,38 @@ describe('Home SSR', () => {
     expect(homeMetadata(empty.settings).alternates).toEqual({ canonical: '/' });
     expect(homeMetadata({ status: 'success', data: [setting('seo.default_title', 'Общий'), setting('seo.default_description', 'Описание')] })).toMatchObject({ title: 'Общий', description: 'Описание' });
     expect(homeMetadata({ status: 'success', data: [setting('seo.home.title', 'Главная'), setting('seo.default_title', 'Общий')] }).title).toBe('Главная');
+  });
+});
+
+describe('Home services regression', () => {
+  it('UT-HOME-01 renders the services heading and all four links in SSR HTML', () => {
+    const html = renderToStaticMarkup(<HomeContent data={empty} />);
+    expect(html).toMatch(/<section[^>]*aria-labelledby="home-services-heading"/);
+    expect(html).toMatch(/<h2[^>]*id="home-services-heading"[^>]*>Услуги<\/h2>/);
+    expect(html.match(/class="[^"]*serviceCard[^"]*"/g)).toHaveLength(4);
+  });
+
+  it('UT-HOME-02 uses responsive content-driven card geometry', () => {
+    const css = readFileSync(new URL('./home.module.css', import.meta.url), 'utf8');
+    expect(css).not.toMatch(/aspect-ratio\s*:\s*1(?:\s|;)/);
+    expect(css).toMatch(/\.serviceCard\s*\{[^}]*min-height:\s*var\(--space-40\)[^}]*padding:\s*var\(--space-6\)/);
+    expect(css).toMatch(/@media\s*\(max-width:\s*767px\)[^{]*\{[\s\S]*?\.servicesHeading\s*\{[^}]*margin-bottom:\s*var\(--space-8\)/);
+    expect(css).toMatch(/\.serviceCard\s*\{[^}]*min-height:\s*var\(--space-36\)[^}]*padding:\s*var\(--space-4\)/);
+  });
+
+  it('UT-HOME-03 preserves service labels, icons and route hrefs', () => {
+    const html = renderToStaticMarkup(<HomeContent data={empty} />);
+    const services = [
+      ['Занятия', '/uslugi/zanyatiya', 'lessons'],
+      ['Прогулки', '/uslugi/progulki', 'rides'],
+      ['Абонементы', '/uslugi/zanyatiya', 'passes'],
+      ['Постой', '/uslugi/postoy', 'boarding'],
+    ];
+    for (const [label, href, icon] of services) {
+      expect(html).toContain(label);
+      expect(html).toContain(`href="${href}"`);
+      expect(html).toContain(`/icons/070-${icon}.svg`);
+    }
+    expect(html).toContain('<nav aria-label="Услуги клуба"');
   });
 });

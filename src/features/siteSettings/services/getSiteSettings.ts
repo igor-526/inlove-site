@@ -1,4 +1,4 @@
-import { normalizePolicyUrl } from "./policyUrl";
+import { normalizePolicyUrl, POLICY_URL_FALLBACK } from "./policyUrl";
 import { siteSettingList } from "@/api/siteSettings";
 import type { SiteSettingMiniOutDto } from "@/types/siteSettings";
 
@@ -30,7 +30,7 @@ export const SHARED_SETTING_KEYS = [
 export const FALLBACK_SHARED_SETTINGS: SharedSiteSettings = {
   shortName: "ИНЛав", menu: SITE_ROUTES.map((item) => ({ ...item })), headerCtaLabel: "Записаться",
   copyrightName: "Конный клуб «ИНЛав»", socialLinks: [],
-  callback: { title: "Записаться в клуб", submitLabel: "Отправить", successMessage: "Спасибо! Мы скоро свяжемся с вами.", consentText: "Я соглашаюсь с политикой обработки персональных данных", policyUrl: "" },
+  callback: { title: "Записаться в клуб", submitLabel: "Отправить", successMessage: "Спасибо! Мы скоро свяжемся с вами.", consentText: "Я соглашаюсь с политикой обработки персональных данных", policyUrl: POLICY_URL_FALLBACK },
   seo: { defaultTitle: "Конный клуб «ИНЛав»" },
 };
 function stringValue(item: SiteSettingMiniOutDto | undefined): string | undefined {

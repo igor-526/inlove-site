@@ -31,6 +31,10 @@ ENV SENTRY_ENVIRONMENT=$SENTRY_ENVIRONMENT
 ENV SENTRY_TRACES_SAMPLE_RATE=$SENTRY_TRACES_SAMPLE_RATE
 ENV SENTRY_RELEASE=$SENTRY_RELEASE
 
+# Reject incomplete public API configuration in every production build path.
+# The validator prints field names only, never configured values.
+RUN node scripts/validate-production-config.mjs
+
 # Собираем приложение
 RUN npm run build
 

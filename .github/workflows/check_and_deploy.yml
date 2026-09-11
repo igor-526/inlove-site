@@ -36,6 +36,12 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v6
 
+      - name: Validate production public API inputs
+        env:
+          NEXT_PUBLIC_API_BASE_URL: ${{ secrets.NEXT_PUBLIC_API_BASE_URL }}
+          NEXT_PUBLIC_EQUESTRIAN_SERVICE_KEY: ${{ secrets.EQUESTRIAN_SERVICE_KEY }}
+        run: node scripts/validate-production-config.mjs
+
       - name: Log in to GitHub Container Registry
         uses: docker/login-action@v3
         with:

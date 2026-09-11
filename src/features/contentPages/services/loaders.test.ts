@@ -10,7 +10,12 @@ vi.mock('react', async () => {
 import { loadNewsArchive, loadNewsDetail, loadHomeData, loadAboutData, normalizeNewsPage, CONTENT_TIMEOUT_MS } from './loaders';
 const item = { id: '123e4567-e89b-42d3-a456-426614174000', slug: 'news', name: 'News', snippet: null, published_at: '2026-09-01T00:00:00Z', photos: [] };
 const fetcher = vi.fn();
-beforeEach(() => { vi.stubEnv('NEXT_PUBLIC_API_BASE_URL', 'https://api.example'); vi.stubGlobal('fetch', fetcher); fetcher.mockReset(); });
+beforeEach(() => {
+  vi.stubEnv('NEXT_PUBLIC_API_BASE_URL', 'https://api.example');
+  vi.stubEnv('NEXT_PUBLIC_EQUESTRIAN_SERVICE_KEY', 'inlove');
+  vi.stubGlobal('fetch', fetcher);
+  fetcher.mockReset();
+});
 afterEach(() => { vi.unstubAllGlobals(); vi.unstubAllEnvs(); });
 const response = (data: unknown, status = 200) => new Response(JSON.stringify(data), { status });
 it('preserves archive total and distinguishes empty and out of range', async () => {

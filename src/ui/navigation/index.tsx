@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, type FocusEvent, type KeyboardEvent as ReactKeyboardEvent, type RefObject } from "react";
+import { createPortal } from "react-dom";
 import { usePathname } from "next/navigation";
 import type { SiteMenuItem, SiteSocialLink } from "@/features/siteSettings";
 import { Logo, Icon } from "../atoms";
@@ -28,7 +29,7 @@ function ServicesDropdown({ items, pathname }: { items: SiteMenuItem[]; pathname
   const onBlur = (event: FocusEvent<HTMLDivElement>) => { if (!event.currentTarget.contains(event.relatedTarget)) close(); };
   return <div className={styles.servicesMenu} onMouseEnter={() => setOpen(true)} onMouseLeave={() => close()} onBlur={onBlur} onKeyDown={(event) => { if (event.key === "Escape") { event.preventDefault(); close(true); } }}>
     <button ref={triggerRef} type="button" className={`${styles.navLink} ${styles.servicesTrigger}`} aria-expanded={open} aria-controls="services-menu" data-active={active || undefined} onClick={() => setOpen((value) => !value)} onKeyDown={onTriggerKeyDown}>Услуги <Icon name="chevron-down" size={16} /></button>
-    {open ? <div ref={listRef} id="services-menu" className={styles.servicesDropdown}><NavigationLinks menu={items} pathname={pathname} /></div> : null}
+    {open ? <div ref={listRef} id="services-menu" className={styles.servicesDropdown}><div className={styles.servicesDropdownSurface}><NavigationLinks menu={items} pathname={pathname} /></div></div> : null}
   </div>;
 }
 
@@ -67,7 +68,7 @@ export function MobileMenu({ open, menu, phone, socialLinks, ctaLabel, shortName
     document.addEventListener("keydown", onKeyDown); return () => { document.removeEventListener("keydown", onKeyDown); document.body.style.overflow = previousOverflow; };
   }, [open, onClose, triggerRef]);
   if (!open) return null;
-  return <div id="mobile-menu" className={styles.overlay} role="dialog" aria-modal="true" aria-label="Меню" ref={panelRef}><div className={styles.mobileTop}><Logo shortName={shortName} /><button className={styles.iconButton} type="button" onClick={onClose} aria-label="Закрыть меню"><Icon name="close" size={28} /></button></div><nav className={styles.mobileNav} aria-label="Мобильная навигация"><GroupedNavigation menu={menu} pathname={pathname} onNavigate={onClose} /></nav><div className={styles.mobileBottom}>{phone ? <a href={phoneHref(phone)}>{phone}</a> : null}<div className={styles.socials}>{socialLinks.map((social) => <a key={social.type} href={social.href} aria-label={social.label}>{social.label}</a>)}</div><Button size="large" onClick={() => { onClose(); onRequestCallback("mobile-menu"); }}>{ctaLabel}</Button></div></div>;
+  return createPortal(<div id="mobile-menu" className={styles.overlay} role="dialog" aria-modal="true" aria-label="Меню" ref={panelRef}><div className={styles.mobileTop}><Logo shortName={shortName} /><button className={styles.iconButton} type="button" onClick={onClose} aria-label="Закрыть меню"><Icon name="close" size={28} /></button></div><nav className={styles.mobileNav} aria-label="Мобильная навигация"><GroupedNavigation menu={menu} pathname={pathname} onNavigate={onClose} /></nav><div className={styles.mobileBottom}>{phone ? <a href={phoneHref(phone)}>{phone}</a> : null}<div className={styles.socials}>{socialLinks.map((social) => <a key={social.type} href={social.href} aria-label={social.label}>{social.label}</a>)}</div><Button size="large" onClick={() => { onClose(); onRequestCallback("mobile-menu"); }}>{ctaLabel}</Button></div></div>, document.body);
 }
 
 export function SiteFooter({ shortName, description, menu, address, phone, workingHours, mapsUrl, socialLinks, copyrightName }: { shortName: string; description?: string; menu: SiteMenuItem[]; address?: string; phone?: string; workingHours?: string; mapsUrl?: string; socialLinks: SiteSocialLink[]; copyrightName: string }) {

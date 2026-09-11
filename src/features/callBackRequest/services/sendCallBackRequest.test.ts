@@ -11,7 +11,7 @@ const payload = { name: "Visitor", phone: "+10000000000" };
 describe("callback request service", () => {
   beforeEach(() => createMock.mockReset());
 
-  it("delegates valid payload to the public callback wrapper", async () => {
+  it("UT-CB71-06 delegates one exact payload to the public callback wrapper", async () => {
     createMock.mockResolvedValue({ status: "ok", data: undefined });
 
     await expect(sendCallBackRequest(payload)).resolves.toBeUndefined();
@@ -28,5 +28,16 @@ describe("callback request service", () => {
     await expect(sendCallBackRequest(payload)).rejects.toEqual(
       new CallBackRequestError("Invalid payload", 400),
     );
+  });
+
+  it.each([401, 422, 500])("UT-CB71-06 preserves callback status %s without retry", async (statusCode) => {
+    createMock.mockResolvedValue({ status: "error", statusCode, data: { detail: "Callback failed" } });
+
+    await expect(sendCallBackRequest(payload)).rejects.toMatchObject({
+      name: "CallBackRequestError",
+      message: "Callback failed",
+      statusCode,
+    });
+    expect(createMock).toHaveBeenCalledOnce();
   });
 });

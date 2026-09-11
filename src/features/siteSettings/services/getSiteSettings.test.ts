@@ -22,11 +22,11 @@ describe("shared settings adapter", () => {
     expect(result.socialLinks).toHaveLength(1);
   });
 
-  it.each(["/about#privacy", "/about/?from=form#privacy", "javascript:alert(1)", "https://", "//example.com/policy", "", "https://example.com/\\policy"])("drops unavailable or unsafe configured policy URL %s", (url) => {
-    expect(normalizeSharedSettings([setting("callback.policy_url", url)]).callback.policyUrl).toBe("");
+  it.each(["javascript:alert(1)", "https://", "//example.com/policy", "", "https://example.com/\\policy"])("uses the local fallback for unavailable or unsafe configured policy URL %s", (url) => {
+    expect(normalizeSharedSettings([setting("callback.policy_url", url)]).callback.policyUrl).toBe("/about#privacy");
   });
 
-  it.each(["https://example.com/policy", "http://example.com/policy", "/documents/policy.pdf"])("keeps configured policy URL %s", (url) => {
+  it.each(["https://example.com/policy", "http://example.com/policy", "/documents/policy.pdf", "/about#privacy", "/about/?from=form#privacy"])("keeps configured policy URL %s", (url) => {
     expect(normalizeSharedSettings([setting("callback.policy_url", url)]).callback.policyUrl).toBe(url);
   });
 
@@ -35,6 +35,6 @@ describe("shared settings adapter", () => {
     expect(partial.menu).toEqual(FALLBACK_SHARED_SETTINGS.menu);
     expect(partial.footerDescription).toBeUndefined();
     vi.mocked(siteSettingList).mockResolvedValue({ status: "error", data: { detail: "offline" } });
-    await expect(getSiteSettings()).resolves.toEqual(FALLBACK_SHARED_SETTINGS);
+    await expect(getSiteSettings()).resolves.toEqual(normalizeSharedSettings([]));
   });
 });

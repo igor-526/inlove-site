@@ -5,12 +5,12 @@ import { Button, Field, TextArea } from "@/ui/controls";
 import { normalizePolicyUrl } from "@/features/siteSettings/services/policyUrl";
 import { useSiteSettings } from "@/features/siteSettings";
 import { CallBackRequestError, sendCallBackRequest } from "./services/sendCallBackRequest";
-import { appendCallbackContext, callbackFormSchema, formatCallbackContext, type CallbackContext, type CallbackFormValues } from "./schema";
+import { appendCallbackContext, callbackFormSchema, composedCallbackCommentSchema, formatCallbackContext, type CallbackContext, type CallbackFormValues } from "./schema";
 import styles from "./callbackModal.module.css";
 
 type Errors = Partial<Record<keyof CallbackFormValues | "form", string>>;
-const EMPTY_VALUES = { name: "", phone: "", comment: "", consent: false } as const;
-type InputValues = { name: string; phone: string; comment: string; consent: boolean };
+const EMPTY_VALUES = { name: "", comment: "", consent: false } as const;
+type ControlledValues = { name: string; comment: string; consent: boolean };
 
 export function CallbackModal({ open, context, onClose }: { open: boolean; context: CallbackContext; onClose: () => void }) {
   const { callback } = useSiteSettings();
@@ -18,7 +18,7 @@ export function CallbackModal({ open, context, onClose }: { open: boolean; conte
   const descriptionId = useId();
   const dialogRef = useRef<HTMLDivElement>(null);
   const previousFocusRef = useRef<HTMLElement | null>(null);
-  const [values, setValues] = useState<InputValues>({ ...EMPTY_VALUES });
+  const [values, setValues] = useState<ControlledValues>({ ...EMPTY_VALUES });
   const [errors, setErrors] = useState<Errors>({});
   const [state, setState] = useState<"idle" | "pending" | "success">("idle");
 
@@ -66,13 +66,12 @@ export function CallbackModal({ open, context, onClose }: { open: boolean; conte
     event.preventDefault();
     if (state === "pending") return;
     const formData = new FormData(event.currentTarget as HTMLFormElement);
-    const submittedValues: InputValues = {
+    const submittedValues = {
       name: String(formData.get("name") ?? ""),
       phone: String(formData.get("phone") ?? ""),
       comment: String(formData.get("comment") ?? ""),
       consent: formData.has("consent"),
     };
-    setValues(submittedValues);
     const result = callbackFormSchema.safeParse(submittedValues);
     if (!result.success) {
       const nextErrors: Errors = {};
@@ -81,11 +80,18 @@ export function CallbackModal({ open, context, onClose }: { open: boolean; conte
       focusFirstError(nextErrors);
       return;
     }
+    const comment = appendCallbackContext(result.data.comment, context);
+    const composedComment = composedCallbackCommentSchema.safeParse(comment);
+    if (!composedComment.success) {
+      const nextErrors: Errors = { comment: composedComment.error.issues[0]?.message };
+      setErrors(nextErrors);
+      focusFirstError(nextErrors);
+      return;
+    }
     setErrors({});
     setState("pending");
     try {
-      const comment = appendCallbackContext(result.data.comment, context);
-      await sendCallBackRequest({ ...(result.data.name ? { name: result.data.name } : {}), phone: result.data.phone, ...(comment ? { comment } : {}) });
+      await sendCallBackRequest({ ...(result.data.name ? { name: result.data.name } : {}), phone: result.data.phone, ...(composedComment.data ? { comment: composedComment.data } : {}) });
       setState("success");
     } catch (error) {
       setState("idle");
@@ -107,7 +113,7 @@ export function CallbackModal({ open, context, onClose }: { open: boolean; conte
         <form className={styles.form} onSubmit={submit} noValidate aria-busy={state === "pending"}>
           {contextText ? <p className={styles.context}>{contextText}</p> : null}
           <Field id="callback-name" name="name" label="Имя" value={values.name} maxLength={127} disabled={state === "pending"} error={errors.name} onChange={(e) => setValues((v) => ({ ...v, name: e.target.value }))} />
-          <Field id="callback-phone" name="phone" label="Телефон" type="tel" autoComplete="tel" required value={values.phone} maxLength={63} disabled={state === "pending"} error={errors.phone} onChange={(e) => setValues((v) => ({ ...v, phone: e.target.value }))} />
+          <Field id="callback-phone" name="phone" label="Телефон" type="tel" autoComplete="tel" required defaultValue="" maxLength={63} disabled={state === "pending"} error={errors.phone} />
           <TextArea id="callback-comment" name="comment" label="Комментарий" value={values.comment} maxLength={2000} disabled={state === "pending"} error={errors.comment} onChange={(e) => setValues((v) => ({ ...v, comment: e.target.value }))} />
           <div className={styles.consent}>
             <input id="callback-consent" name="consent" type="checkbox" checked={values.consent} disabled={state === "pending"} aria-invalid={Boolean(errors.consent)} aria-describedby={errors.consent ? "callback-consent-error" : undefined} onChange={(e) => setValues((v) => ({ ...v, consent: e.target.checked }))} />

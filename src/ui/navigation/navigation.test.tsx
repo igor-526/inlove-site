@@ -41,6 +41,23 @@ describe("site navigation", () => {
     expect(document.activeElement).toBe(trigger); expect(trigger.getAttribute("aria-expanded")).toBe("false");
   });
 
+  it("UT-NAV-01 keeps a continuous pointer bridge and an opaque dropdown surface", () => {
+    const css = readFileSync(`${process.cwd()}/src/ui/navigation/navigation.module.css`, "utf8");
+    const tokens = readFileSync(`${process.cwd()}/src/ui/foundations/tokens.css`, "utf8");
+    expect(css).toMatch(/\.servicesDropdown\{[^}]*top:100%[^}]*padding-top:4px[^}]*z-index:40/);
+    expect(css).not.toContain("top:calc(100% + 4px)");
+    expect(css).toMatch(/\.servicesDropdownSurface\{[^}]*background:var\(--color-bg-secondary\)[^}]*border:var\(--border-default\)[^}]*box-shadow:var\(--shadow-card\)/);
+    expect(tokens).toMatch(/--color-bg-secondary:\s*#[0-9a-f]{6};/i);
+    expect(tokens).not.toMatch(/--color-bg-secondary:\s*(?:transparent|#[0-9a-f]{8}\s*;)/i);
+
+    render(<SiteHeader shortName="ИНЛав" menu={FALLBACK_SHARED_SETTINGS.menu} socialLinks={[]} ctaLabel="Записаться" onRequestCallback={vi.fn()} />);
+    const trigger = screen.getByRole("button", { name: "Услуги" });
+    fireEvent.mouseEnter(trigger.parentElement!);
+    expect(screen.getByRole("link", { name: "Занятия" })).toBeTruthy();
+    fireEvent.mouseLeave(trigger.parentElement!);
+    expect(screen.queryByRole("link", { name: "Занятия" })).toBeNull();
+  });
+
   it("CT-NOTE-SHELL-03 keeps footer grouping aligned and compact with 44px links", () => {
     const { container } = render(<SiteFooter shortName="ИНЛав" menu={FALLBACK_SHARED_SETTINGS.menu} socialLinks={[]} copyrightName="ИНЛав" />);
     const footerNav = screen.getByRole("navigation", { name: "Навигация в подвале" });
@@ -58,11 +75,29 @@ describe("site navigation", () => {
     for (const link of contacts.querySelectorAll("a")) { expect(link.target).toBe("_blank"); expect(link.rel).toBe("noopener noreferrer"); }
   });
 
-  it("keeps mobile focus trap, Escape close and focus return", () => {
+  it("UT-NAV-02 keeps mobile focus trap, Escape close and focus return", () => {
     const trigger = document.createElement("button"); document.body.append(trigger); trigger.focus(); const triggerRef = { current: trigger }; const onClose = vi.fn();
     const { rerender } = render(<MobileMenu open menu={FALLBACK_SHARED_SETTINGS.menu} socialLinks={[]} ctaLabel="Записаться" shortName="ИНЛав" onClose={onClose} onRequestCallback={vi.fn()} triggerRef={triggerRef} />);
     expect(document.body.style.overflow).toBe("hidden"); fireEvent.keyDown(document, { key: "Escape" }); expect(onClose).toHaveBeenCalledOnce();
     rerender(<MobileMenu open={false} menu={FALLBACK_SHARED_SETTINGS.menu} socialLinks={[]} ctaLabel="Записаться" shortName="ИНЛав" onClose={onClose} onRequestCallback={vi.fn()} triggerRef={triggerRef} />);
     expect(document.activeElement).toBe(trigger); expect(document.body.style.overflow).toBe(""); trigger.remove();
+  });
+
+  it("UT-NAV-03 portals the mobile overlay to the viewport root and cleans it up", () => {
+    const host = document.createElement("header"); document.body.append(host);
+    const { rerender } = render(<MobileMenu open menu={FALLBACK_SHARED_SETTINGS.menu} socialLinks={[]} ctaLabel="Записаться" shortName="ИНЛав" onClose={vi.fn()} onRequestCallback={vi.fn()} />, { container: host });
+    const dialog = screen.getByRole("dialog", { name: "Меню" });
+    expect(dialog.parentElement).toBe(document.body);
+    expect(host.querySelector("#mobile-menu")).toBeNull();
+    rerender(<MobileMenu open={false} menu={FALLBACK_SHARED_SETTINGS.menu} socialLinks={[]} ctaLabel="Записаться" shortName="ИНЛав" onClose={vi.fn()} onRequestCallback={vi.fn()} />);
+    expect(screen.queryByRole("dialog", { name: "Меню" })).toBeNull();
+    host.remove();
+  });
+
+  it("UT-NAV-04 provides dynamic viewport, safe-area and internal-scroll geometry", () => {
+    const css = readFileSync(`${process.cwd()}/src/ui/navigation/navigation.module.css`, "utf8");
+    expect(css).toMatch(/\.overlay\{[^}]*height:100vh[^}]*min-height:100vh[^}]*env\(safe-area-inset-top\)[^}]*overflow-x:hidden[^}]*overflow-y:auto/);
+    expect(css).toContain("@supports(height:100dvh){.overlay{height:100dvh;min-height:100dvh}}");
+    expect(css).toContain("min-height:44px");
   });
 });

@@ -1,7 +1,7 @@
 import { parseCoordinates } from "@/ui/media/coordinates";
 import type { Metadata } from 'next';
 import { BenefitsSection, NewsSection, type BenefitItem } from '@/ui/sections';
-import { PageContainer, Section } from '@/ui/foundations';
+import { PageContainer, Section, Text } from '@/ui/foundations';
 import type { NewsSummary } from '@/ui/cards';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -49,7 +49,11 @@ export function HomeContent({ data }: { data: HomeData }) {
     <HomeHero title={settingText(settings, 'home.hero_title') ?? 'Конный клуб «Инлав»'}
       subtitle={settingText(settings, 'home.hero_subtitle')} label={settingText(settings, 'home.hero_cta_label') ?? 'Записаться'}
       image={{ src: '/images/070-home-hero.jpg', alt: '' }} />
-    <Section><PageContainer><nav aria-label="Услуги клуба" className={styles.links}>
+    <Section spacing="compact" headingId="home-services-heading"><PageContainer>
+      <div className={styles.servicesHeading}>
+        <Text as="h2" id="home-services-heading" variant="h2">Услуги</Text>
+      </div>
+      <nav aria-label="Услуги клуба" className={styles.links}>
       {[
         { label: 'Занятия', href: '/uslugi/zanyatiya', icon: 'lessons' },
         { label: 'Прогулки', href: '/uslugi/progulki', icon: 'rides' },
@@ -59,7 +63,8 @@ export function HomeContent({ data }: { data: HomeData }) {
         <Image src={`/icons/070-${icon}.svg`} width={32} height={32} alt="" aria-hidden="true" />
         <span>{label}</span><span aria-hidden="true" className={styles.arrow}>↗</span>
       </Link>)}
-    </nav></PageContainer></Section>
+      </nav>
+    </PageContainer></Section>
     <BenefitsSection items={benefits(settingObject(settings, 'home.program_benefits'))} />
     <BenefitsSection items={benefits(settingObject(settings, 'home.club_benefits'))} tone="sand" />
     <NewsSection items={newsItems} total={newsItems.length} mode="latest" state={data.news.status} />

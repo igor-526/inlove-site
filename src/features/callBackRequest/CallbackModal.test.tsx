@@ -1,10 +1,13 @@
 // @vitest-environment jsdom
-import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { SiteSettingsProvider } from "@/features/siteSettings";
 import { FALLBACK_SHARED_SETTINGS } from "@/features/siteSettings/services/getSiteSettings";
 import { CallbackModal } from "./CallbackModal";
+import { CallbackController } from "./CallbackController";
 import { CallBackRequestError, sendCallBackRequest } from "./services/sendCallBackRequest";
+import { CALLBACK_REQUEST_EVENT } from "@/features/siteChrome/SiteChrome";
+import type { CallbackContext } from "./schema";
 
 vi.mock("./services/sendCallBackRequest", async (original) => {
   const actual = await original<typeof import("./services/sendCallBackRequest")>();
@@ -15,6 +18,20 @@ const sendMock = vi.mocked(sendCallBackRequest);
 function renderModal(overrides: Partial<typeof FALLBACK_SHARED_SETTINGS.callback> = {}, onClose = vi.fn()) {
   const settings = { ...FALLBACK_SHARED_SETTINGS, callback: { ...FALLBACK_SHARED_SETTINGS.callback, ...overrides } };
   return { onClose, ...render(<SiteSettingsProvider settings={settings}><button>Открыть</button><CallbackModal open context={{ route: "/loshadi", horseName: "Искра" }} onClose={onClose} /></SiteSettingsProvider>) };
+}
+
+function renderController() {
+  return render(<SiteSettingsProvider settings={FALLBACK_SHARED_SETTINGS}><CallbackController /></SiteSettingsProvider>);
+}
+
+function openController(context: CallbackContext = { route: "/loshadi", horseName: "Искра" }) {
+  window.dispatchEvent(new CustomEvent(CALLBACK_REQUEST_EVENT, { detail: context }));
+}
+
+function nativeInput(element: HTMLInputElement, value: string) {
+  const nativeSetter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")?.set;
+  nativeSetter?.call(element, value);
+  element.dispatchEvent(new InputEvent("input", { bubbles: true, inputType: "insertText", data: value }));
 }
 
 function fillValid() {
@@ -49,13 +66,13 @@ describe("CT-CB-02..08/CT-NOTE-CB-01 CallbackModal", () => {
     fireEvent.submit(screen.getByRole("button", { name: FALLBACK_SHARED_SETTINGS.callback.submitLabel }).closest("form")!);
     await waitFor(() => expect(document.activeElement).toBe(screen.getByLabelText(/Телефон/)));
     expect(screen.getByRole("checkbox").getAttribute("aria-invalid")).toBe("true");
-    expect(screen.queryByRole("link", { name: "Политика" })).toBeNull();
+    expect(screen.getByRole("link", { name: "Политика" }).getAttribute("href")).toBe("/about#privacy");
     expect(sendMock).not.toHaveBeenCalled();
   });
 
-  it.each(["", "/about#privacy", "/about/?source=form#privacy", "javascript:alert(1)", "//example.com/policy"])("keeps mandatory consent without a policy link for %s", async (policyUrl) => {
+  it.each(["", "javascript:alert(1)", "//example.com/policy"])("uses the policy fallback while keeping mandatory consent for %s", async (policyUrl) => {
     renderModal({ policyUrl });
-    expect(screen.queryByRole("link", { name: "Политика" })).toBeNull();
+    expect(screen.getByRole("link", { name: "Политика" }).getAttribute("href")).toBe("/about#privacy");
     fireEvent.change(screen.getByLabelText(/Телефон/), { target: { value: "+79991234567" } });
     fireEvent.submit(screen.getByRole("button", { name: FALLBACK_SHARED_SETTINGS.callback.submitLabel }).closest("form")!);
     await waitFor(() => expect(document.activeElement).toBe(screen.getByRole("checkbox")));
@@ -63,7 +80,7 @@ describe("CT-CB-02..08/CT-NOTE-CB-01 CallbackModal", () => {
     expect(sendMock).not.toHaveBeenCalled();
   });
 
-  it.each(["https://example.com/policy", "/documents/policy.pdf"])("preserves configured policy URL %s", (policyUrl) => {
+  it.each(["https://example.com/policy", "/documents/policy.pdf", "/about#privacy", "/about/?source=form#privacy"])("preserves configured policy URL %s", (policyUrl) => {
     renderModal({ policyUrl });
     expect(screen.getByRole("link", { name: "Политика" }).getAttribute("href")).toBe(policyUrl);
     expect((screen.getByRole("checkbox") as HTMLInputElement).checked).toBe(false);
@@ -84,6 +101,52 @@ describe("CT-CB-02..08/CT-NOTE-CB-01 CallbackModal", () => {
     expect((screen.getByDisplayValue("Анна") as HTMLInputElement).disabled).toBe(true);
     resolve();
     expect((await screen.findByRole("status")).textContent).toContain(FALLBACK_SHARED_SETTINGS.callback.successMessage);
+  });
+
+  it("UT-CB71-05 omits whitespace optional fields and consent from the exact payload", async () => {
+    sendMock.mockResolvedValue();
+    renderModal();
+    fireEvent.change(screen.getByLabelText("Имя"), { target: { value: "  " } });
+    fireEvent.change(screen.getByLabelText(/Телефон/), { target: { value: " +79991234567 " } });
+    fireEvent.change(screen.getByLabelText("Комментарий"), { target: { value: "\n" } });
+    fireEvent.click(screen.getByRole("checkbox"));
+    fireEvent.submit(screen.getByRole("button", { name: FALLBACK_SHARED_SETTINGS.callback.submitLabel }).closest("form")!);
+    await waitFor(() => expect(sendMock).toHaveBeenCalledWith({ phone: "+79991234567", comment: "Лошадь: Искра" }));
+    expect(sendMock.mock.calls[0][0]).not.toHaveProperty("consent");
+  });
+
+  it("rejects a composed comment over 2000 before pending/network and focuses comment", async () => {
+    renderModal();
+    const contextText = "Лошадь: Искра";
+    const visitorComment = "x".repeat(2000 - contextText.length - 1);
+    fireEvent.input(screen.getByLabelText(/Телефон/), { target: { value: "+79991234567" } });
+    fireEvent.change(screen.getByLabelText("Комментарий"), { target: { value: visitorComment } });
+    fireEvent.click(screen.getByRole("checkbox"));
+    fireEvent.submit(screen.getByRole("button", { name: FALLBACK_SHARED_SETTINGS.callback.submitLabel }).closest("form")!);
+
+    await waitFor(() => expect(document.activeElement).toBe(screen.getByLabelText("Комментарий")));
+    expect(screen.getByText(/Комментарий с выбранным контекстом/)).toBeTruthy();
+    expect((screen.getByLabelText("Комментарий") as HTMLTextAreaElement).value).toBe(visitorComment);
+    expect((screen.getByLabelText(/Телефон/) as HTMLInputElement).value).toBe("+79991234567");
+    expect((screen.getByRole("checkbox") as HTMLInputElement).checked).toBe(true);
+    expect(screen.getByRole("button", { name: FALLBACK_SHARED_SETTINGS.callback.submitLabel }).getAttribute("aria-busy")).not.toBe("true");
+    expect(sendMock).not.toHaveBeenCalled();
+  });
+
+  it("accepts an exact 2000-character composed comment without truncation", async () => {
+    sendMock.mockResolvedValue();
+    renderModal();
+    const contextText = "Лошадь: Искра";
+    const visitorComment = "x".repeat(2000 - contextText.length - 2);
+    fireEvent.input(screen.getByLabelText(/Телефон/), { target: { value: "+79991234567" } });
+    fireEvent.change(screen.getByLabelText("Комментарий"), { target: { value: visitorComment } });
+    fireEvent.click(screen.getByRole("checkbox"));
+    fireEvent.submit(screen.getByRole("button", { name: FALLBACK_SHARED_SETTINGS.callback.submitLabel }).closest("form")!);
+
+    await waitFor(() => expect(sendMock).toHaveBeenCalledOnce());
+    const payload = sendMock.mock.calls[0][0];
+    expect(payload.comment).toBe(`${visitorComment}\n\n${contextText}`);
+    expect(payload.comment).toHaveLength(2000);
   });
 
   it.each([
@@ -128,5 +191,58 @@ describe("CT-CB-02..08/CT-NOTE-CB-01 CallbackModal", () => {
 
     expect(await screen.findByText(/Не удалось отправить/)).toBeTruthy();
     await waitFor(() => expect((screen.getByLabelText(/Телефон/) as HTMLInputElement).value).toBe("+7 981 838-48-31"));
+  });
+
+  it.each([
+    [401, new CallBackRequestError("failure", 401)],
+    [422, new CallBackRequestError("failure", 422)],
+    [500, new CallBackRequestError("failure", 500)],
+    ["network", new Error("offline")],
+  ])("retains the native browser tel value through disabled pending and controller error (%s)", async (_scenario, failure) => {
+    let reject!: (error: Error) => void;
+    sendMock.mockImplementation(() => new Promise<void>((_, fail) => { reject = fail; }));
+    renderController();
+    openController();
+
+    const phone = await screen.findByLabelText(/Телефон/) as HTMLInputElement;
+    act(() => nativeInput(phone, "+7 981 838-48-31"));
+    fireEvent.change(screen.getByLabelText("Комментарий"), { target: { value: "Не очищать" } });
+    fireEvent.click(screen.getByRole("checkbox"));
+    fireEvent.submit(phone.closest("form")!);
+    await waitFor(() => expect(sendMock).toHaveBeenCalledOnce());
+    expect(sendMock).toHaveBeenCalledWith(expect.objectContaining({ phone: "+7 981 838-48-31" }));
+    expect((screen.getByLabelText(/Телефон/) as HTMLInputElement).disabled).toBe(true);
+    expect((screen.getByLabelText(/Телефон/) as HTMLInputElement).value).toBe("+7 981 838-48-31");
+
+    reject(failure);
+    await waitFor(() => {
+      const restoredPhone = screen.getByLabelText(/Телефон/) as HTMLInputElement;
+      expect(restoredPhone.disabled).toBe(false);
+      expect(restoredPhone.value).toBe("+7 981 838-48-31");
+      expect((screen.getByLabelText("Комментарий") as HTMLTextAreaElement).value).toBe("Не очищать");
+      expect((screen.getByRole("checkbox") as HTMLInputElement).checked).toBe(true);
+    });
+  });
+
+  it("unmounts a successful session and reopens with a fresh idle form", async () => {
+    sendMock.mockResolvedValue();
+    renderController();
+    openController();
+    await screen.findByRole("dialog");
+    fillValid();
+    fireEvent.submit(screen.getByRole("button", { name: FALLBACK_SHARED_SETTINGS.callback.submitLabel }).closest("form")!);
+    expect(await screen.findByRole("status")).toBeTruthy();
+
+    fireEvent.click(screen.getByRole("button", { name: "Закрыть" }));
+    await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+    openController({ route: "/about" });
+
+    await screen.findByRole("dialog");
+    expect(screen.queryByRole("status")).toBeNull();
+    expect((screen.getByLabelText("Имя") as HTMLInputElement).value).toBe("");
+    expect((screen.getByLabelText(/Телефон/) as HTMLInputElement).value).toBe("");
+    expect((screen.getByLabelText("Комментарий") as HTMLTextAreaElement).value).toBe("");
+    expect((screen.getByRole("checkbox") as HTMLInputElement).checked).toBe(false);
+    expect(screen.getByRole("button", { name: FALLBACK_SHARED_SETTINGS.callback.submitLabel })).toBeTruthy();
   });
 });

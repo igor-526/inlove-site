@@ -10,7 +10,7 @@ afterEach(() => {
 });
 
 describe("callback public POST exception", () => {
-  it("serializes payload and sends selector without CMS auth (UT-IL-04)", async () => {
+  it("serializes payload and sends selector without CMS auth (UT-API-02)", async () => {
     process.env.NEXT_PUBLIC_API_BASE_URL = "https://api.example.test/api";
     process.env.NEXT_PUBLIC_EQUESTRIAN_SERVICE_KEY = "inlove";
     const fetchMock = vi.fn().mockResolvedValue({ ok: true, status: 201, text: async () => "{}" });
@@ -29,6 +29,7 @@ describe("callback public POST exception", () => {
     expect(headers.get("X-Equestrian-Service-Key")).toBe("inlove");
     expect(headers.has("Authorization")).toBe(false);
     expect(headers.has("Cookie")).toBe(false);
+    expect(options.credentials).toBe("omit");
   });
 
   it("ignores a caller selector and uses only the configured selector", async () => {
@@ -46,10 +47,10 @@ describe("callback public POST exception", () => {
     expect(new Headers(options.headers).get("X-Equestrian-Service-Key")).toBe("inlove");
   });
 
-  it("removes a caller selector when the configured selector is missing", async () => {
+  it("fails safely without fetching when the configured selector is missing", async () => {
     process.env.NEXT_PUBLIC_API_BASE_URL = "https://api.example.test/api";
     process.env.NEXT_PUBLIC_EQUESTRIAN_SERVICE_KEY = "   ";
-    const fetchMock = vi.fn().mockResolvedValue({ ok: false, status: 401, statusText: "Unauthorized", text: async () => "{\"detail\":\"Missing selector\"}" });
+    const fetchMock = vi.fn();
     vi.stubGlobal("fetch", fetchMock);
 
     await expect(callBackRequestCreate(
@@ -57,11 +58,33 @@ describe("callback public POST exception", () => {
       { headers: { "X-Equestrian-Service-Key": "foreign-tenant" } },
     )).resolves.toEqual({
       status: "error",
-      statusCode: 401,
-      data: { detail: "Missing selector" },
+      data: { detail: "Public API is not configured" },
     });
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("preserves backend selector denial without auth retry (UT-API-04)", async () => {
+    process.env.NEXT_PUBLIC_API_BASE_URL = "https://api.example.test/api";
+    process.env.NEXT_PUBLIC_EQUESTRIAN_SERVICE_KEY = "invalid-selector";
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 401,
+      statusText: "Unauthorized",
+      text: async () => '{"detail":"Invalid selector"}',
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(callBackRequestCreate({ phone: "+79991234567" })).resolves.toEqual({
+      status: "error",
+      statusCode: 401,
+      data: { detail: "Invalid selector" },
+    });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
 
     const [, options] = fetchMock.mock.calls[0] as [string, RequestInit];
-    expect(new Headers(options.headers).has("X-Equestrian-Service-Key")).toBe(false);
+    const headers = new Headers(options.headers);
+    expect(headers.has("Authorization")).toBe(false);
+    expect(headers.has("Cookie")).toBe(false);
+    expect(options.credentials).toBe("omit");
   });
 });
