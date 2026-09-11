@@ -1,7 +1,15 @@
-import { UnderConstructionPage, createRouteMetadata, PLACEHOLDER_ROUTES } from "@/features/placeholderPages";
+import type { Metadata } from "next";
+import { loadRidesData } from "@/features/contentPages/services/ridesLoaders";
+import { RidesContent, ridesMetadata } from "@/features/contentPages/rides/RidesContent";
 
-export const generateMetadata = () => createRouteMetadata("rides");
+export const dynamic = "force-dynamic";
 
-export default function RidesPage() {
-  return <UnderConstructionPage heading={PLACEHOLDER_ROUTES.rides.heading} />;
+export async function generateMetadata(): Promise<Metadata> {
+  const data = await loadRidesData();
+  return ridesMetadata(data.settings);
+}
+
+export default async function RidesPage() {
+  const data = await loadRidesData();
+  return <RidesContent data={data} />;
 }

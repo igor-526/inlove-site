@@ -8,8 +8,19 @@ import { createRouteMetadata, PLACEHOLDER_ROUTES } from "./metadata";
 vi.mock("@/api/siteSettings", () => ({ siteSettingList: vi.fn() }));
 const siteSettingListMock = vi.mocked(siteSettingList);
 
+// `/uslugi/zanyatiya`, `/uslugi/progulki`, `/uslugi/postoy` and `/loshadi` were replaced with real
+// SSR content by inlove-dynamic-pages (SC-1..SC-4) and no longer use UnderConstructionPage; these
+// fixtures keep multi-heading regression coverage of the reusable component itself (retained for
+// future placeholders) without referencing the now-removed PLACEHOLDER_ROUTES entries.
+const HEADING_FIXTURES = [
+  { heading: "Занятия и абонементы" },
+  { heading: "Конные прогулки" },
+  { heading: "Постой лошадей" },
+  { heading: "Наши лошади" },
+] as const;
+
 describe("REN-PAGE-01 route SSR content", () => {
-  it.each([PLACEHOLDER_ROUTES.lessons, PLACEHOLDER_ROUTES.rides, PLACEHOLDER_ROUTES.boarding, PLACEHOLDER_ROUTES.horses])("renders one route-specific h1 for $path", ({ heading }) => {
+  it.each(HEADING_FIXTURES)("renders one route-specific h1 for $heading", ({ heading }) => {
     const { container, unmount } = render(<UnderConstructionPage heading={heading} />);
     expect(screen.getByRole("heading", { level: 1, name: heading })).toBeTruthy();
     expect(container.querySelectorAll("h1")).toHaveLength(1);
@@ -36,10 +47,10 @@ describe("REN-PAGE-02 server metadata", () => {
 
   it("prefers route SEO settings to defaults", async () => {
     siteSettingListMock.mockResolvedValue({ status: "ok", data: [
-      { key: "seo.rides.title", value: "Прогулка в лесу", type: "string" },
-      { key: "seo.rides.description", value: "Описание прогулок", type: "string" },
+      { key: "seo.news.title", value: "Новости клуба Инлав", type: "string" },
+      { key: "seo.news.description", value: "Свежие новости клуба", type: "string" },
       { key: "seo.default_title", value: "Общий заголовок", type: "string" },
     ] } as never);
-    await expect(createRouteMetadata("rides")).resolves.toMatchObject({ title: "Прогулка в лесу", description: "Описание прогулок" });
+    await expect(createRouteMetadata("news")).resolves.toMatchObject({ title: "Новости клуба Инлав", description: "Свежие новости клуба" });
   });
 });

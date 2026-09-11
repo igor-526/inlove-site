@@ -1,7 +1,15 @@
-import { UnderConstructionPage, createRouteMetadata, PLACEHOLDER_ROUTES } from "@/features/placeholderPages";
+import type { Metadata } from "next";
+import { loadBoardingData } from "@/features/contentPages/services/boardingLoaders";
+import { BoardingContent, boardingMetadata } from "@/features/contentPages/boarding/BoardingContent";
 
-export const generateMetadata = () => createRouteMetadata("boarding");
+export const dynamic = "force-dynamic";
 
-export default function BoardingPage() {
-  return <UnderConstructionPage heading={PLACEHOLDER_ROUTES.boarding.heading} />;
+export async function generateMetadata(): Promise<Metadata> {
+  const data = await loadBoardingData();
+  return boardingMetadata(data.settings);
+}
+
+export default async function BoardingPage() {
+  const data = await loadBoardingData();
+  return <BoardingContent data={data} />;
 }

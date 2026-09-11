@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { Badge, PriceValue, ResponsiveImage } from "../atoms";
 import { Button, TextLink } from "../controls";
 import type { ImageSource } from "../media";
+import type { TableCellFormatter, TableType } from "@/types/table";
 import styles from "./cards.module.css";
 
 export type PriceSummary = { name: string; slug?: string; description?: string; photo?: ImageSource; price?: string | number | null; duration?: string };
@@ -14,10 +15,40 @@ export function PriceRow({ name, description, priceTables, onRequest }: { name: 
   return <article className={styles.priceRow}><div><h3>{name}</h3>{description?.trim() ? <p>{description}</p> : null}</div><div className={styles.priceOffers}>{priceTables.length ? priceTables.map((item, index) => <div className={styles.priceOffer} key={item.id ?? `${item.label}-${index}`}><span>{item.label}</span><PriceValue value={item.value} duration={item.duration} /></div>) : <PriceValue value={null} />}</div><Button variant="ghost" onClick={onRequest}>Записаться</Button></article>;
 }
 
-export type HorseSummary = { name: string; pedigree_name?: string; description?: string; breed?: string; coat_color?: string; height?: string | number; sex?: string; bdate_formatted?: string; age?: string; photo?: ImageSource; services?: string[] };
-export function HorseCard({ horse, expanded = false, onToggle, onRequest }: { horse: HorseSummary; expanded?: boolean; onToggle: () => void; onRequest: () => void }) {
+function formatterClass(formatters: TableCellFormatter[] = []): string {
+  return formatters.map((item) => item === "text_bold" ? styles.cellBold : item === "text_italic" ? styles.cellItalic : item === "text_underline" ? styles.cellUnderline : "").filter(Boolean).join(" ");
+}
+/** Renders a full backend price_tables entry (columns/rows/cells) responsively: a real table on
+ * desktop (with a horizontal-scroll fallback container) and "parameter — value" pairs on mobile. */
+export function TariffTable({ table }: { table: TableType }) {
+  if (!table.columns.length || !table.rows.length) return null;
+  return <div className={styles.tariffTableWrap}><table className={styles.tariffTable}>
+    <thead><tr>{table.columns.map((column) => <th key={column.key} title={column.annotation || undefined}>{column.title}</th>)}</tr></thead>
+    <tbody>{table.rows.map((row, index) => <tr key={index}>{table.columns.map((column) => { const cell = row.cells[column.key]; return <td key={column.key} title={cell?.annotation || undefined} className={cell ? formatterClass(cell.cell_formatter) : undefined}><span className={styles.cellLabel} aria-hidden="true">{column.title}</span><span>{cell?.value ?? ""}</span></td>; })}</tr>)}</tbody>
+  </table></div>;
+}
+
+export type TariffSummary = { name: string; slug: string; description?: string; photo?: ImageSource; tables: TableType[] };
+export function TariffCard({ tariff, detailHref, ctaLabel = "Записаться", onRequest }: { tariff: TariffSummary; detailHref?: string; ctaLabel?: string; onRequest: () => void }) {
+  const tables = tariff.tables.filter((table) => table.rows.length > 0);
+  return <article className={styles.tariff}>
+    <ResponsiveImage {...tariff.photo} alt={tariff.photo?.alt ?? tariff.name} ratio="4:5" />
+    <div className={styles.cardBody}>
+      <h3>{tariff.name}</h3>
+      {tariff.description?.trim() ? <p>{tariff.description}</p> : null}
+      {tables.length ? tables.map((table, index) => <TariffTable key={index} table={table} />) : <PriceValue value={null} />}
+      <div className={styles.actions}>
+        {detailHref ? <TextLink href={detailHref}>Подробнее</TextLink> : null}
+        <Button variant="secondary" onClick={onRequest}>{ctaLabel}</Button>
+      </div>
+    </div>
+  </article>;
+}
+
+export type HorseSummary ={ name: string; pedigree_name?: string; description?: string; breed?: string; coat_color?: string; height?: string | number; sex?: string; bdate_formatted?: string; age?: string; photo?: ImageSource; services?: string[] };
+export function HorseCard({ horse, expanded = false, detailHref, onToggle, onRequest }: { horse: HorseSummary; expanded?: boolean; detailHref?: string; onToggle: () => void; onRequest: () => void }) {
   const traits = [horse.breed, horse.coat_color, horse.sex, horse.age, horse.height ? `${horse.height} см` : undefined].filter(Boolean) as string[];
-  return <article className={styles.horse}><ResponsiveImage {...horse.photo} alt={horse.photo?.alt ?? horse.name} ratio="4:5" /><div className={styles.cardBody}><h3>{horse.name}</h3>{horse.pedigree_name?.trim() ? <p className={styles.meta}>{horse.pedigree_name}</p> : null}<div className={styles.badges}>{traits.map((trait) => <Badge key={trait} tone="nature">{trait}</Badge>)}</div>{horse.description?.trim() ? <p>{horse.description}</p> : null}<button className={styles.toggle} type="button" aria-expanded={expanded} onClick={onToggle}>{expanded ? "Скрыть подробности" : "Показать подробности"}</button>{expanded ? <>{horse.bdate_formatted?.trim() ? <p className={styles.meta}>Дата рождения: {horse.bdate_formatted}</p> : null}{horse.services?.length ? <ul>{horse.services.map((service) => <li key={service}>{service}</li>)}</ul> : null}</> : null}<Button variant="secondary" onClick={onRequest}>Записаться с {horse.name}</Button></div></article>;
+  return <article className={styles.horse}><ResponsiveImage {...horse.photo} alt={horse.photo?.alt ?? horse.name} ratio="4:5" /><div className={styles.cardBody}><h3>{horse.name}</h3>{horse.pedigree_name?.trim() ? <p className={styles.meta}>{horse.pedigree_name}</p> : null}<div className={styles.badges}>{traits.map((trait) => <Badge key={trait} tone="nature">{trait}</Badge>)}</div>{horse.description?.trim() ? <p>{horse.description}</p> : null}<button className={styles.toggle} type="button" aria-expanded={expanded} onClick={onToggle}>{expanded ? "Скрыть подробности" : "Показать подробности"}</button>{expanded ? <>{horse.bdate_formatted?.trim() ? <p className={styles.meta}>Дата рождения: {horse.bdate_formatted}</p> : null}{horse.services?.length ? <ul>{horse.services.map((service) => <li key={service}>{service}</li>)}</ul> : null}</> : null}<div className={styles.actions}>{detailHref ? <TextLink href={detailHref}>Подробнее</TextLink> : null}<Button variant="secondary" onClick={onRequest}>Записаться с {horse.name}</Button></div></div></article>;
 }
 
 export type NewsSummary = { id: string | number; name: string; snippet?: string; slug?: string; href?: string; published_at?: string; published_at_formatted?: string; photo?: ImageSource };

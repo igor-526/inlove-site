@@ -1,7 +1,15 @@
-import { UnderConstructionPage, createRouteMetadata, PLACEHOLDER_ROUTES } from "@/features/placeholderPages";
+import type { Metadata } from "next";
+import { loadLessonsData } from "@/features/contentPages/services/lessonsLoaders";
+import { LessonsContent, lessonsMetadata } from "@/features/contentPages/lessons/LessonsContent";
 
-export const generateMetadata = () => createRouteMetadata("lessons");
+export const dynamic = "force-dynamic";
 
-export default function LessonsPage() {
-  return <UnderConstructionPage heading={PLACEHOLDER_ROUTES.lessons.heading} />;
+export async function generateMetadata(): Promise<Metadata> {
+  const data = await loadLessonsData();
+  return lessonsMetadata(data.settings);
+}
+
+export default async function LessonsPage() {
+  const data = await loadLessonsData();
+  return <LessonsContent data={data} />;
 }

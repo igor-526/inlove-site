@@ -24,12 +24,12 @@ const photosSchema = z.object({ total: z.number().int().nonnegative(), items: z.
   id: z.string().uuid(), name: z.string(), description: z.string().nullable(), path: z.string(),
   url: z.string(), created_at: z.string(), updated_at: z.string().nullable(),
 })) });
-function validated<T>(result: ApiResult<unknown>, schema: z.ZodType): DataState<T> {
+export function validated<T>(result: ApiResult<unknown>, schema: z.ZodType): DataState<T> {
   if (result.status === 'error') return { status: 'error', statusCode: result.statusCode };
   const parsed = schema.safeParse(result.data);
   return parsed.success ? { status: 'success', data: parsed.data as T } : { status: 'error' };
 }
-function listState<T>(state: DataState<{ items: T[] }>): DataState<T[]> {
+export function listState<T>(state: DataState<{ items: T[] }>): DataState<T[]> {
   if (state.status !== 'success') return state;
   return state.data.items.length ? { status: 'success', data: state.data.items } : { status: 'empty' };
 }

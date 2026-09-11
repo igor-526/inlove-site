@@ -3,10 +3,6 @@ import { siteSettingList } from "@/api/siteSettings";
 
 export const PLACEHOLDER_ROUTES = {
   home: { path: "/", heading: "Конный клуб «Инлав»", title: "Инлав", seoKey: "home" },
-  lessons: { path: "/uslugi/zanyatiya", heading: "Занятия и абонементы", title: "Инлав | Занятия и абонементы", seoKey: "lessons" },
-  rides: { path: "/uslugi/progulki", heading: "Конные прогулки", title: "Инлав | Прогулки", seoKey: "rides" },
-  boarding: { path: "/uslugi/postoy", heading: "Постой лошадей", title: "Инлав | Постой", seoKey: "boarding" },
-  horses: { path: "/loshadi", heading: "Наши лошади", title: "Инлав | Лошади", seoKey: "horses" },
   news: { path: "/novosti", heading: "Новости клуба", title: "Инлав | Новости", seoKey: "news" },
   about: { path: "/about", heading: "О клубе", title: "Инлав | О клубе", seoKey: "about" },
 } as const;
@@ -20,7 +16,7 @@ export async function createRouteMetadata(route: PlaceholderRoute): Promise<Meta
   const titleKey = `seo.${config.seoKey}.title`;
   const descriptionKey = `seo.${config.seoKey}.description`;
   const response = await siteSettingList({
-    key: [titleKey, descriptionKey, "seo.default_title", "seo.default_description", "site.short_name"],
+    key: [titleKey, descriptionKey, "seo.default_title", "seo.default_description"],
   });
   const values = new Map(
     response.status === "ok" && Array.isArray(response.data)
@@ -29,7 +25,6 @@ export async function createRouteMetadata(route: PlaceholderRoute): Promise<Meta
   );
   const title = values.get(titleKey)
     ?? (route === "home" ? values.get("seo.default_title") : undefined)
-    ?? (route === "lessons" && values.get("site.short_name") ? `${values.get("site.short_name")} | ${config.heading}` : undefined)
     ?? config.title;
   const description = values.get(descriptionKey) ?? values.get("seo.default_description") ?? FALLBACK_DESCRIPTION;
 

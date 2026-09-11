@@ -37,6 +37,13 @@ export function Accordion({ items, allowMultiple = false }: { items: AccordionIt
   const toggle = (id: string) => setOpenIds((current) => current.includes(id) ? current.filter((item) => item !== id) : allowMultiple ? [...current, id] : [id]);
   return <div className={styles.accordion}>{items.map((item) => { const open = openIds.includes(item.id); const buttonId = `accordion-${item.id}`; const panelId = `${buttonId}-panel`; return <div className={styles.accordionItem} key={item.id}><button id={buttonId} className={styles.accordionButton} type="button" aria-expanded={open} aria-controls={panelId} onClick={() => toggle(item.id)}><span className={styles.accordionTitle}>{item.title}</span><span className={`${styles.accordionIcon} ${open ? styles.open : ""}`}><Icon name="plus" decorative /></span></button>{open ? <div className={styles.panel} id={panelId} role="region" aria-labelledby={buttonId}>{item.content}</div> : null}</div>; })}</div>;
 }
+export type SegmentedOption<T extends string> = { value: T; label: string };
+export function SegmentedToggle<T extends string>({ options, value, onChange, ariaLabel }: { options: SegmentedOption<T>[]; value: T; onChange: (value: T) => void; ariaLabel: string }) {
+  if (options.length < 2) return null;
+  return <div className={styles.segmented} role="tablist" aria-label={ariaLabel}>
+    {options.map((option) => <button key={option.value} type="button" role="tab" aria-selected={option.value === value} className={`${styles.segment} ${option.value === value ? styles.segmentActive : ""}`} onClick={() => onChange(option.value)}>{option.label}</button>)}
+  </div>;
+}
 export function PaginationLoadMore({ page, loaded, total, pending, error, onLoadMore, label = "Показать ещё" }: { page: number; loaded: number; total: number; pending?: boolean; error?: string; onLoadMore: (nextPage: number) => void; label?: string }) {
   const liveId = useId();
   if (loaded >= total) return null;

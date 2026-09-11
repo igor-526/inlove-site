@@ -1,7 +1,15 @@
-import { UnderConstructionPage, createRouteMetadata, PLACEHOLDER_ROUTES } from "@/features/placeholderPages";
+import type { Metadata } from "next";
+import { loadHorsesData } from "@/features/contentPages/horses/loaders";
+import { HorsesContent, horsesMetadata } from "@/features/contentPages/horses/HorsesContent";
 
-export const generateMetadata = () => createRouteMetadata("horses");
+export const dynamic = "force-dynamic";
 
-export default function HorsesPage() {
-  return <UnderConstructionPage heading={PLACEHOLDER_ROUTES.horses.heading} />;
+export async function generateMetadata(): Promise<Metadata> {
+  const data = await loadHorsesData();
+  return horsesMetadata(data.settings);
+}
+
+export default async function HorsesPage() {
+  const data = await loadHorsesData();
+  return <HorsesContent data={data} />;
 }
