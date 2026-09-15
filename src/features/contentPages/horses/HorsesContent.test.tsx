@@ -17,17 +17,18 @@ const horse = (slug: string, name: string, overrides: Partial<Record<string, unk
 const empty: Data = { horses: { status: "empty" } };
 
 describe("Horses SSR content", () => {
-  it("renders one h1, the intro, a horse card and the final CTA", () => {
+  it("renders one h1, the intro and a horse card without a duplicate section heading or trailing CTA", () => {
     const data: Data = {
       horses: { status: "success", data: [horse("marta", "Марта")] },
     };
-    const { container, getByRole } = render(<HorsesContent data={data} />);
+    const { container, getByRole, queryByRole, queryByText } = render(<HorsesContent data={data} />);
     expect(container.querySelectorAll("h1")).toHaveLength(1);
     expect(container.textContent).toContain("Наши лошади");
     expect(getByRole("heading", { name: "Марта" })).toBeTruthy();
     expect(container.textContent).toContain("Орловская рысистая");
-    expect(getByRole("heading", { name: "Хотите познакомиться лично?" })).toBeTruthy();
-    expect(getByRole("button", { name: "Записаться в клуб" })).toBeTruthy();
+    expect(queryByText("Лошади клуба")).toBeNull();
+    expect(queryByRole("heading", { name: "Хотите познакомиться лично?" })).toBeNull();
+    expect(queryByRole("button", { name: "Записаться в клуб" })).toBeNull();
   });
 
   it("expands and collapses in-page horse details via the toggle", () => {

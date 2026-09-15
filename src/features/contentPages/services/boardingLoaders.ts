@@ -3,17 +3,16 @@ import { createPriceGroupLoaders } from './pricesLoaders';
 import { loadServiceGroup } from './serviceGroups';
 import type { DataState } from './loaders';
 
-/** scheme.md "Услуги / Постой": `GET /api/prices?name=Постой частных лошадей`. */
-export const BOARDING_NAME_QUERY: string[] = ['Постой частных лошадей'];
-
-/** Single source of truth for the /uslugi/postoy allow-list: used by both the list loader
- * and the [slug] detail guard, per design D2. Only one tariff — no toggle/conflicting-cards
- * pattern needed here (unlike zanyatiya/progulki). */
-export const BOARDING_ALLOWED_SLUGS = ['horse-boarding-yandex'] as const;
+/** D5: "one services page = one dedicated price_groups group" (OQ4 extended scope).
+ * `/uslugi/postoy` queries the dedicated "Постой частных лошадей" group directly — no more
+ * `?name=Постой+частных+лошадей` filter and no client-side slug allow-list. The detail route
+ * (`/uslugi/postoy/[slug]`) is gated by this same group name via the tariff's own `groups`
+ * field (D5 backend-trust guard), replacing the old `BOARDING_ALLOWED_SLUGS` array. */
+export const BOARDING_GROUP = 'Постой частных лошадей';
 
 const { loadList, loadDetail } = createPriceGroupLoaders({
-  nameQuery: BOARDING_NAME_QUERY,
-  allowedSlugs: BOARDING_ALLOWED_SLUGS,
+  groupsQuery: BOARDING_GROUP,
+  allowedGroups: [BOARDING_GROUP],
 });
 export const loadBoardingList = loadList;
 export const loadBoardingDetail = loadDetail;

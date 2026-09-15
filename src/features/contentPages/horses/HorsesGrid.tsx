@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { PageContainer, Section, Text } from "@/ui/foundations";
+import { PageContainer, Section } from "@/ui/foundations";
 import { EmptyState, ErrorBlock } from "@/ui/feedback";
 import { Button } from "@/ui/controls";
 import { HorseCard, type HorseSummary } from "@/ui/cards";
@@ -42,10 +42,7 @@ export function HorsesGrid({ horses, emptyText, ctaLabel }: { horses: HorsesStat
     if (next.has(slug)) next.delete(slug); else next.add(slug);
     return next;
   });
-  return <Section headingId="horses-grid-heading"><PageContainer>
-    <div className={styles.heading}>
-      <Text as="h2" id="horses-grid-heading" variant="h2">Лошади клуба</Text>
-    </div>
+  return <Section><PageContainer>
     {horses.status === "error"
       ? <ErrorBlock message="Не удалось загрузить лошадей." onRetry={() => window.location.reload()} />
       : horses.status === "empty" || !horses.data.length

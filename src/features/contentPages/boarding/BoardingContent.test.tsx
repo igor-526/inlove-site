@@ -68,4 +68,21 @@ describe("Boarding SSR content", () => {
     expect(boardingMetadata(empty.settings)).toMatchObject({ title: "Инлав | Постой", alternates: { canonical: "/uslugi/postoy" } });
     expect(boardingMetadata({ status: "success", data: [setting("site.short_name", "LEGACY"), setting("seo.boarding.title", "LEGACY")] }).title).toBe("Инлав | Постой");
   });
+
+  it("FE-4B.4: Постой/Инфраструктура/Что входит/Стоимость render as direct <section> siblings so the FE-1 automatic seam CSS (`.section + .section`) collapses their gap without any extra spacing prop", () => {
+    const data: Data = { group, settings: { status: "success", data: [] }, prices: { status: "success", data: [boarding] } };
+    const { container } = render(<BoardingContent data={data} />);
+    const sections = Array.from(container.querySelectorAll("section"));
+    const headingsInOrder = sections.map((section) => section.querySelector("h1,h2")?.textContent);
+    const boardingIndex = headingsInOrder.indexOf("Постой");
+    const infraIndex = headingsInOrder.indexOf("Инфраструктура");
+    const includedIndex = headingsInOrder.indexOf("Что входит");
+    const pricesIndex = headingsInOrder.indexOf("Стоимость");
+    expect([boardingIndex, infraIndex, includedIndex, pricesIndex]).toEqual([0, 1, 2, 3]);
+    // No non-section element (e.g. an error/empty <p>) sits between the four sections, which is
+    // what the automatic sibling-adjacency seam rule requires (no data-no-seam escape used here).
+    for (const section of sections.slice(0, 4)) {
+      expect(section.getAttribute("data-no-seam")).toBeNull();
+    }
+  });
 });

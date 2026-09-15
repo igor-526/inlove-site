@@ -10,6 +10,6 @@ export function requestHomeCallback(serviceName?: string, serviceSlug?: string) 
 export function HomeHero({ title, subtitle, label, image }: { title: string; subtitle?: string; label: string; image: ComponentProps<typeof HeroMedia>['image'] }) {
   return <div className={styles.heroPhoto}><HeroMedia image={image} title={title} subtitle={subtitle} primaryAction={{ label, onClick: () => requestHomeCallback() }} /></div>;
 }
-export function HomeContacts(props: Omit<ComponentProps<typeof ContactSection>, 'onRequest' | 'context'>) {
-  return <ContactSection {...props} context="Главная" onRequest={() => requestHomeCallback()} />;
+export function HomeContacts(props: Omit<ComponentProps<typeof ContactSection>, 'onRequest' | 'context' | 'trimBottom'>) {
+  return <ContactSection {...props} trimBottom context="Главная" onRequest={() => requestHomeCallback()} />;
 }

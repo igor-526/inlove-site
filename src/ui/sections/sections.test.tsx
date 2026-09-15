@@ -24,6 +24,28 @@ describe("CT-ILUI-04 reusable sections", () => {
     expect(split?.lastElementChild?.querySelector("img")?.getAttribute("alt")).toBe("Территория клуба");
   });
 
+  it("IntroSection.spacing defaults to editorial and accepts compact without changing structure", () => {
+    const { container, rerender } = render(<IntroSection title="Заголовок" body="Текст" />);
+    expect(container.querySelector("section")?.className).toMatch(/editorial/);
+    rerender(<IntroSection title="Заголовок" body="Текст" spacing="compact" />);
+    const section = container.querySelector("section");
+    expect(section?.className).toMatch(/compact/);
+    expect(section?.className).not.toMatch(/editorial/);
+    expect(container.querySelector("h2")?.textContent).toBe("Заголовок");
+  });
+
+  it("UT-SC-12/EditorialSplitSection: renders full width without a leftover image column when image is omitted", () => {
+    const { container, rerender } = render(<EditorialSplitSection title="Природа рядом" body="Текст" image={{ src: "/club.jpg", alt: "Территория" }} />);
+    const splitWithImage = container.querySelector("section > div > div");
+    expect(splitWithImage?.className).not.toMatch(/splitFullWidth/);
+    expect(container.querySelector("img")).toBeTruthy();
+    rerender(<EditorialSplitSection title="Природа рядом" body="Текст" />);
+    const splitFullWidth = container.querySelector("section > div > div");
+    expect(splitFullWidth?.className).toMatch(/splitFullWidth/);
+    expect(container.querySelector("img")).toBeNull();
+    expect(container.textContent).toContain("Природа рядом");
+  });
+
   it("omits empty and invalid benefits instead of inventing content", () => {
     const { container, getByRole } = render(<><BenefitsSection items={[]} /><BenefitsSection title="Почему выбирают клуб" items={[{ title: "" }, { title: "Забота", text: "Внимательное отношение" }]} /></>);
     expect(container.querySelectorAll("section")).toHaveLength(1);
@@ -45,6 +67,16 @@ describe("CT-ILUI-04 reusable sections", () => {
     expect(container.textContent).not.toContain("0 ₽");
   });
 
+  it("UT-SC-09: PricesSection never renders the removed price-variability notice", () => {
+    const request = vi.fn();
+    const { container, rerender } = render(<PricesSection mode="lessons" items={[{ name: "Занятие", price_tables: [] }]} onRequest={request} />);
+    expect(container.textContent).not.toMatch(/переменны|нескольких источников/i);
+    rerender(<PricesSection mode="lessons" items={[]} state="empty" onRequest={request} />);
+    expect(container.textContent).not.toMatch(/переменны|нескольких источников/i);
+    rerender(<PricesSection mode="lessons" items={[]} state="error" onRequest={request} />);
+    expect(container.textContent).not.toMatch(/переменны|нескольких источников/i);
+  });
+
   it("covers horse and news loading, empty and success variants", () => {
     const { container, rerender, getByRole } = render(<HorsesSection horses={[]} mode="grid" ctaLabel="Записаться" state="loading" onRequest={vi.fn()} onToggle={vi.fn()} />);
     expect(getByRole("status", { name: "Загрузка лошадей" })).toBeTruthy();
@@ -64,6 +96,11 @@ describe("CT-ILUI-04 reusable sections", () => {
     expect(container.querySelector('a[href^="tel:"]')).toBeNull();
     fireEvent.click(getByRole("button", { name: "Связаться" }));
     expect(request).toHaveBeenCalledWith("О клубе");
+  });
+
+  it("forwards trimBottom to the underlying Section so a contacts block can sit flush against the footer", () => {
+    const { container } = render(<ContactSection trimBottom address="Адрес клуба" socialLinks={[]} ctaLabel="Связаться" context="Главная" onRequest={vi.fn()} />);
+    expect(container.querySelector("section")?.className).toMatch(/trimBottom/);
   });
 
   it("renders semantic information lists and a stable privacy fallback anchor", () => {

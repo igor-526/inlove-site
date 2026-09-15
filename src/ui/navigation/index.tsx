@@ -40,10 +40,15 @@ function DesktopNavigation({ menu, pathname }: { menu: SiteMenuItem[]; pathname:
 
 function GroupedNavigation({ menu, pathname, onNavigate }: { menu: SiteMenuItem[]; pathname: string; onNavigate?: () => void }) {
   const { services } = splitMenu(menu); let inserted = false;
+  const groupActive = services.some((item) => pathname === item.href);
   return <>{menu.map((item) => {
     if (SERVICE_ROUTES.has(item.href)) {
       if (inserted) return null; inserted = true;
-      return <div className={styles.groupedServices} key="services"><span>Услуги</span><NavigationLinks menu={services} pathname={pathname} onNavigate={onNavigate} /></div>;
+      return <div className={styles.groupedServices} key="services" data-active={groupActive || undefined}>
+        <span className={styles.groupedServicesLabel}><Icon name="chevron-right" size={16} />Услуги{groupActive ? <span className={styles.groupActiveDot} aria-hidden="true" /> : null}</span>
+        <hr aria-hidden="true" className={styles.groupedServicesDivider} />
+        <NavigationLinks menu={services} pathname={pathname} onNavigate={onNavigate} />
+      </div>;
     }
     return <NavigationLinks key={item.href} menu={[item]} pathname={pathname} onNavigate={onNavigate} />;
   })}</>;

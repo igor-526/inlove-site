@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useState, type CSSProperties, type ReactNode } from "react";
 import styles from "./atoms.module.css";
 
-export const INLOVE_LOGO_ASSET = "/images/inlove-logo.jpg";
+export const INLOVE_LOGO_ASSET = "/images/inlove-logo-transparent.png";
 
 export function Logo({ variant = "dark", shortName, asset = INLOVE_LOGO_ASSET }: { variant?: "light" | "dark"; shortName?: string; asset?: string }) {
   const [failed, setFailed] = useState(false);

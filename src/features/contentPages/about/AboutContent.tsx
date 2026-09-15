@@ -15,11 +15,11 @@ export function AboutContent({ data }: { data: Awaited<ReturnType<typeof loadAbo
   const coordinates = parseCoordinates(shared.coordinates);
   const safeUrl = (value?: string) => value && /^https?:\/\//i.test(value) ? value : undefined;
   return <>
-    {first.title && first.text ? <IntroSection title={first.title} headingLevel={1} body={first.text} /> : <IntroSection title="О клубе" headingLevel={1} />}
+    {first.title && first.text ? <IntroSection title={first.title} headingLevel={1} body={first.text} spacing="compact" /> : <IntroSection title="О клубе" headingLevel={1} spacing="compact" />}
     {data.settings.status === 'error' ? <Section><PageContainer><ErrorBlock message="Часть информации о клубе временно недоступна." /></PageContainer></Section> : null}
     {second.title && second.text ? <EditorialSplitSection title={second.title} body={second.text} /> : null}
     <AboutContact address={shared.address} nearestStop={shared.nearestStop} coordinates={coordinates}
       mapsUrl={safeUrl(shared.mapsUrl)} phone={shared.phone} workingHours={shared.workingHours}
-      socialLinks={shared.socialLinks.filter((link) => safeUrl(link.href))} ctaLabel="Обратный звонок" />
+      socialLinks={shared.socialLinks.filter((link) => safeUrl(link.href))} ctaLabel="Обратный звонок" trimBottom />
   </>;
 }

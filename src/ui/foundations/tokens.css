@@ -39,6 +39,7 @@
   --space-12: 48px; --space-14: 56px; --space-16: 64px; --space-20: 80px;
   --space-24: 96px; --space-30: 120px; --space-36: 144px; --space-40: 160px;
   --space-48: 192px;
+  --space-seam: var(--space-14);
   --radius-xs: 4px; --radius-sm: 8px; --radius-md: 12px; --radius-lg: 16px;
   --radius-xl: 24px; --radius-pill: 999px;
   --border-default: 1px solid var(--color-border);
@@ -56,6 +57,6 @@
   :root { --text-display-xl-size: 60px; --text-h1-size: 48px; --text-h2-size: 42px; --text-h3-size: 32px; --text-body-l-size: 18px; --text-body-m-size: 16px; }
 }
 @media (max-width: 767px) {
-  :root { --text-display-xl-size: 42px; --text-display-l-size: 42px; --text-h1-size: 40px; --text-h2-size: 34px; --text-h3-size: 28px; --text-h4-size: 24px; --text-body-s-size: 14px; }
+  :root { --text-display-xl-size: 42px; --text-display-l-size: 42px; --text-h1-size: 40px; --text-h2-size: 34px; --text-h3-size: 28px; --text-h4-size: 24px; --text-body-s-size: 14px; --space-seam: var(--space-8); }
 }
 @media (max-width: 375.98px) { :root { --text-display-xl-size: 38px; --text-display-l-size: 38px; } }

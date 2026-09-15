@@ -3,16 +3,16 @@ import { createPriceGroupLoaders } from './pricesLoaders';
 import { loadServiceGroup } from './serviceGroups';
 import type { DataState } from './loaders';
 
-/** scheme.md "Услуги / Прогулки": `GET /api/prices?name=Конные прогулки&name=Конная прогулка`. */
-export const RIDES_NAME_QUERY: string[] = ['Конные прогулки', 'Конная прогулка'];
-
-/** Single source of truth for the /uslugi/progulki allow-list: used by both the list loader
- * and the [slug] detail guard, per design D2. Two conflicting offers, shown separately. */
-export const RIDES_ALLOWED_SLUGS = ['horse-rides-official', 'horse-ride-yandex'] as const;
+/** D5: "one services page = one dedicated price_groups group" (OQ4 extended scope).
+ * `/uslugi/progulki` queries the dedicated "Прогулки" group directly — no more repeatable
+ * `?name=Конные+прогулки&name=Конная+прогулка` filter and no client-side slug allow-list. The
+ * detail route (`/uslugi/progulki/[slug]`) is gated by this same group name via the tariff's
+ * own `groups` field (D5 backend-trust guard), replacing the old `RIDES_ALLOWED_SLUGS` array. */
+export const RIDES_GROUP = 'Прогулки';
 
 const { loadList, loadDetail } = createPriceGroupLoaders({
-  nameQuery: RIDES_NAME_QUERY,
-  allowedSlugs: RIDES_ALLOWED_SLUGS,
+  groupsQuery: RIDES_GROUP,
+  allowedGroups: [RIDES_GROUP],
 });
 export const loadRidesList = loadList;
 export const loadRidesDetail = loadDetail;

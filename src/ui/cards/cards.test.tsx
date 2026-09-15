@@ -1,8 +1,9 @@
 // @vitest-environment jsdom
+import { readFileSync } from "node:fs";
 import { fireEvent, render } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { Carousel, Gallery, MapEmbed } from "../media";
-import { FeatureItem, HorseCard, NewsCard, PersonCard, PriceRow, ReviewSummary, ServiceCard } from "./index";
+import { FeatureItem, HorseCard, NewsCard, PersonCard, PriceRow, ReviewSummary, ServiceCard, TariffCard } from "./index";
 
 describe("CT-ILUI-04 media and content cards", () => {
   it("renders long data without invented media, date or price values", () => {
@@ -41,5 +42,57 @@ describe("CT-ILUI-04 media and content cards", () => {
     expect(container.querySelectorAll("article")).toHaveLength(0);
     expect(container.textContent).toContain("Оценка 4,9 из 5");
     expect(container.textContent).toContain("Забота о лошадях");
+  });
+});
+
+describe("UT-SC-02/03 TariffCard image link and mobile ratio", () => {
+  const tariff = { name: "Абонемент на 8 занятий", slug: "abonement-8", tables: [] };
+
+  it("UT-SC-02 wraps the image in a Link pointing at the tariff detail page, and falls back to a plain image without detailHref", () => {
+    const withLink = render(<TariffCard tariff={tariff} detailHref="/uslugi/zanyatiya/abonement-8" onRequest={vi.fn()} />);
+    const link = withLink.getByRole("link", { name: "Абонемент на 8 занятий" });
+    expect(link.getAttribute("href")).toBe("/uslugi/zanyatiya/abonement-8");
+    expect(link.querySelector("img, [role='img']")).toBeTruthy();
+    expect(withLink.getByText("Подробнее")).toBeTruthy();
+    withLink.unmount();
+
+    const withoutLink = render(<TariffCard tariff={tariff} onRequest={vi.fn()} />);
+    expect(withoutLink.queryByRole("link")).toBeNull();
+    expect(withoutLink.container.querySelector("img, [role='img']")).toBeTruthy();
+    withoutLink.unmount();
+  });
+
+  it("UT-SC-03 defines a mobile-only reduced image ratio and disables pointer events on the image link, distinct from the desktop 4:5 ratio", () => {
+    const css = readFileSync(`${process.cwd()}/src/ui/cards/cards.module.css`, "utf8");
+    const mobileBlock = css.slice(css.indexOf("@media(max-width:767px)"));
+    expect(mobileBlock).toContain(".tariffImageLink{pointer-events:none}");
+    expect(mobileBlock).toContain(".tariffImageLink span:first-child{aspect-ratio:3/2}");
+    expect(mobileBlock).not.toContain("aspect-ratio:4/5");
+  });
+});
+
+describe("UT-SC-01 NewsCard compact horizontal variant", () => {
+  const news = { id: "1", name: "Открытие нового манежа", snippet: "Подробности внутри новости", photo: { src: "/news.jpg", alt: "Манеж" } };
+
+  it("renders image and text side by side via a horizontal grid, full width, distinct from the default vertical card", () => {
+    const compact = render(<NewsCard news={news} variant="compact" href="/novosti/1" />);
+    const article = compact.container.querySelector("article");
+    expect(article?.className).toMatch(/newsCompact/);
+    expect(article?.className).not.toMatch(/featured/);
+    expect(article?.children).toHaveLength(2);
+    expect(article?.children[0].tagName).toBe("SPAN");
+    expect(article?.children[1].className).toMatch(/cardBody/);
+    compact.unmount();
+
+    const vertical = render(<NewsCard news={news} href="/novosti/1" />);
+    expect(vertical.container.querySelector("article")?.className).not.toMatch(/newsCompact/);
+    vertical.unmount();
+  });
+
+  it("defines the compact layout as a two-column grid spanning the full row, with a single-column mobile fallback", () => {
+    const css = readFileSync(`${process.cwd()}/src/ui/cards/cards.module.css`, "utf8");
+    expect(css).toMatch(/\.newsCompact\{grid-column:1\/-1;display:grid;grid-template-columns:[^;]+;/);
+    const mobileBlock = css.slice(css.indexOf("@media(max-width:767px)"));
+    expect(mobileBlock).toContain(".newsCompact{grid-template-columns:1fr}");
   });
 });

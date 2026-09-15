@@ -3,6 +3,9 @@
 .section { padding-block: var(--space-30); }
 .compact { padding-block: var(--space-20); }
 .editorial { padding-block: var(--space-40); }
+.section.trimBottom { padding-bottom: 0; }
+/* Seam: смежные Section схлопывают отступ в одно значение вместо суммы паддингов. Escape hatch: data-no-seam на любой из двух смежных Section отключает схлопывание для этой пары. */
+.section:not([data-no-seam]) + .section:not([data-no-seam]) { padding-top: 0; margin-top: var(--space-seam); }
 .ivory { background: var(--color-bg-primary); }.surface { background: var(--color-bg-secondary); }
 .sage { background: var(--color-bg-sage); }.sand { background: var(--color-bg-sand); }
 .forest { background: var(--color-bg-dark); color: var(--color-text-inverse); }

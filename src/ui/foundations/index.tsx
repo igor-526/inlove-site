@@ -9,9 +9,9 @@ export function PageContainer({ size = "default", className = "", ...props }: HT
   return <div className={`${styles.container} ${size === "wide" ? styles.wide : ""} ${className}`.trim()} {...props} />;
 }
 
-export function Section({ tone = "ivory", spacing = "default", label, headingId, children, className = "", ...props }: HTMLAttributes<HTMLElement> & { tone?: "ivory" | "surface" | "sage" | "sand" | "forest"; spacing?: "compact" | "default" | "editorial"; label?: string; headingId?: string }) {
+export function Section({ tone = "ivory", spacing = "default", trimBottom = false, label, headingId, children, className = "", ...props }: HTMLAttributes<HTMLElement> & { tone?: "ivory" | "surface" | "sage" | "sand" | "forest"; spacing?: "compact" | "default" | "editorial"; trimBottom?: boolean; label?: string; headingId?: string }) {
   if (!children) return null;
-  return <section aria-labelledby={headingId} className={`${styles.section} ${styles[tone]} ${spacing !== "default" ? styles[spacing] : ""} ${className}`.trim()} {...props}>{label?.trim() ? <span className={styles.label}>{label}</span> : null}{children}</section>;
+  return <section aria-labelledby={headingId} className={`${styles.section} ${styles[tone]} ${spacing !== "default" ? styles[spacing] : ""} ${trimBottom ? styles.trimBottom : ""} ${className}`.trim()} {...props}>{label?.trim() ? <span className={styles.label}>{label}</span> : null}{children}</section>;
 }
 
 export function Text({ as, variant = "body-m", tone = "primary", children, className = "", ...props }: { as?: ElementType; variant?: TextVariant; tone?: "primary" | "secondary" | "muted" | "inverse"; children?: ReactNode; className?: string } & Record<string, unknown>) {

@@ -1,3 +1,4 @@
+import Link from "next/link";
 import type { ReactNode } from "react";
 import { Badge, PriceValue, ResponsiveImage } from "../atoms";
 import { Button, TextLink } from "../controls";
@@ -31,10 +32,11 @@ export function TariffTable({ table }: { table: TableType }) {
 export type TariffSummary = { name: string; slug: string; description?: string; photo?: ImageSource; tables: TableType[] };
 export function TariffCard({ tariff, detailHref, ctaLabel = "Записаться", onRequest }: { tariff: TariffSummary; detailHref?: string; ctaLabel?: string; onRequest: () => void }) {
   const tables = tariff.tables.filter((table) => table.rows.length > 0);
+  const image = <ResponsiveImage {...tariff.photo} alt={tariff.photo?.alt ?? tariff.name} ratio="4:5" />;
   return <article className={styles.tariff}>
-    <ResponsiveImage {...tariff.photo} alt={tariff.photo?.alt ?? tariff.name} ratio="4:5" />
+    {detailHref ? <Link href={detailHref} aria-label={tariff.name} className={styles.tariffImageLink}>{image}</Link> : image}
     <div className={styles.cardBody}>
-      <h3>{tariff.name}</h3>
+      <h3 className={styles.tariffName}>{tariff.name}</h3>
       {tariff.description?.trim() ? <p>{tariff.description}</p> : null}
       {tables.length ? tables.map((table, index) => <TariffTable key={index} table={table} />) : <PriceValue value={null} />}
       <div className={styles.actions}>
@@ -52,8 +54,9 @@ export function HorseCard({ horse, expanded = false, detailHref, onToggle, onReq
 }
 
 export type NewsSummary = { id: string | number; name: string; snippet?: string; slug?: string; href?: string; published_at?: string; published_at_formatted?: string; photo?: ImageSource };
-export function NewsCard({ news, featured = false, href, onOpen }: { news: NewsSummary; featured?: boolean; href?: string; onOpen?: () => void }) {
-  return <article className={`${styles.card} ${featured ? styles.featured : ""}`}><ResponsiveImage {...news.photo} alt={news.photo?.alt ?? news.name} ratio={featured ? "16:10" : "3:2"} /><div className={styles.cardBody}>{news.published_at?.trim() ? <time className={styles.meta} dateTime={news.published_at}>{news.published_at_formatted?.trim() || news.published_at}</time> : null}<h3>{news.name}</h3>{news.snippet?.trim() ? <p>{news.snippet}</p> : null}{href ? <Button variant="ghost" href={href}>Открыть новость</Button> : onOpen ? <Button variant="ghost" onClick={onOpen}>Открыть новость</Button> : null}</div></article>;
+export function NewsCard({ news, featured = false, variant = "vertical", href, onOpen }: { news: NewsSummary; featured?: boolean; variant?: "vertical" | "compact"; href?: string; onOpen?: () => void }) {
+  const isCompact = variant === "compact";
+  return <article className={`${styles.card} ${isCompact ? styles.newsCompact : featured ? styles.featured : ""}`}><ResponsiveImage {...news.photo} alt={news.photo?.alt ?? news.name} ratio={isCompact ? "3:2" : featured ? "16:10" : "3:2"} /><div className={styles.cardBody}>{news.published_at?.trim() ? <time className={styles.meta} dateTime={news.published_at}>{news.published_at_formatted?.trim() || news.published_at}</time> : null}<h3>{news.name}</h3>{news.snippet?.trim() ? <p>{news.snippet}</p> : null}{href ? <Button variant="ghost" href={href}>Открыть новость</Button> : onOpen ? <Button variant="ghost" onClick={onOpen}>Открыть новость</Button> : null}</div></article>;
 }
 
 export function PersonCard({ name, roles, phone, status }: { name: string; roles: string[]; phone?: string; status?: string }) {

@@ -14,6 +14,12 @@ describe('curated about SSR', () => {
     expect(html.indexOf('Первый')).toBeLessThan(html.indexOf('Второй'));
   });
 
+  it('UT-SC-12: second about block renders full width without a leftover image column', () => {
+    const html = render([setting('about_1_title', 'Первый'), setting('about_1_text', 'Текст один'), setting('about_2_title', 'Второй'), setting('about_2_text', 'Текст два')]);
+    expect(html).toMatch(/splitFullWidth/);
+    expect(html).not.toMatch(/splitMedia/);
+  });
+
   it('hides each incomplete pair without affecting contacts', () => {
     const html = render([setting('about_1_title', 'Без текста'), setting('about_2_text', 'Без заголовка')]);
     expect(html).not.toContain('Без текста'); expect(html).not.toContain('Без заголовка');

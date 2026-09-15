@@ -13,8 +13,11 @@ const price = (slug: string, name: string, overrides: Partial<Record<string, unk
   id: "123e4567-e89b-42d3-a456-426614174000", name, slug, description: "Описание тарифа",
   photos: [], groups: [], price_tables: [], created_at: "2026-01-01T00:00:00Z", updated_at: null, ...overrides,
 }) as unknown as PriceOutWithTablesDto;
-const single = price("individual-lesson-official", "Индивидуальное занятие");
-const subscription = price("subscription-8-yandex", "Абонемент на 8 занятий");
+// D5/FE-4: category is now decided by the tariff's own backend `groups` field (not a static
+// slug dictionary), so these fixtures must carry the group names DATA-1 assigns in the real
+// backend for these two slugs.
+const single = price("individual-lesson-official", "Индивидуальное занятие", { groups: [{ id: "323e4567-e89b-42d3-a456-426614174000", name: "Разовые" }] });
+const subscription = price("subscription-8-yandex", "Абонемент на 8 занятий", { groups: [{ id: "423e4567-e89b-42d3-a456-426614174000", name: "Абонементы" }] });
 const empty: Data = { group: { status: "empty" }, settings: { status: "empty" }, prices: { status: "empty" } };
 const group: Data["group"] = { status: "success", data: {
   id: "223e4567-e89b-42d3-a456-426614174000", name: "Занятия", slug: "zanyatiya",
