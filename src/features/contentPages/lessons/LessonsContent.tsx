@@ -24,11 +24,10 @@ export function lessonsMetadata(input: LessonsData | LessonsData["settings"]): M
 
 export function LessonsContent({ data }: { data: LessonsData }) {
   const body = data.group.status === "success" ? data.group.data.description : undefined;
-  const prices = data.group.status === "success" ? data.prices : { status: "empty" as const };
+  const prices = data.prices;
   return <>
     <IntroSection headingLevel={1} title="Занятия и абонементы" body={body} />
     {data.group.status === "error" ? <p role="alert">Не удалось загрузить описание услуги.</p> : null}
-    {data.group.status === "empty" ? <p role="status">Услуга «Занятия» временно недоступна.</p> : null}
     <LessonsPrices prices={prices} />
     <BenefitsSection title="Почему выбирают наши программы" items={PROGRAM_BENEFITS} />
     <LessonsCta label="Записаться на занятие" />

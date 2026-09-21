@@ -25,12 +25,11 @@ export function RidesContent({ data }: { data: RidesData }) {
   };
   const preparation: InformationBlock = { title: "Подготовка", items: ["Выбирайте удобную одежду и закрытую обувь."] };
   const safety: InformationBlock = { title: "Безопасность", items: ["Следуйте указаниям инструктора во время всей прогулки."] };
-  const visiblePrices = data.group.status === "success" ? data.prices : { status: "empty" as const };
+  const visiblePrices = data.prices;
   return <>
     <IntroSection headingLevel={1} eyebrow="Услуги" title="Прогулки" />
     <EditorialSplitSection title="Как проходит прогулка" body={data.group.status === "success" ? data.group.data.description : undefined} image={mainPhoto(0)} imageSide="right" />
     {data.group.status === "error" ? <p role="alert">Не удалось загрузить описание услуги.</p> : null}
-    {data.group.status === "empty" ? <p role="status">Услуга «Прогулки» временно недоступна.</p> : null}
     <RidesPrices prices={visiblePrices} />
     <EditorialSplitSection title="Окружение" body="Маршрут проходит в спокойной природной обстановке рядом с клубом." image={mainPhoto(1)} imageSide="left" />
     <PreparationSafetySection blocks={[preparation, safety]} />
