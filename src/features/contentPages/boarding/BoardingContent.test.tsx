@@ -69,6 +69,26 @@ describe("Boarding SSR content", () => {
     expect(boardingMetadata({ status: "success", data: [setting("site.short_name", "LEGACY"), setting("seo.boarding.title", "LEGACY")] }).title).toBe("Инлав | Постой");
   });
 
+  // UT-SVC-03 (design.md#test-matrix, fix-077-inlove-services-availability): a production bug
+  // made the price cards disappear whenever the unrelated `horse_services` description group was
+  // empty, even though the page's own price-group API call had already succeeded.
+  it("UT-SVC-03: shows tariffs from a successful price group even when the description group is empty", () => {
+    const data: Data = { ...empty, group: { status: "empty" }, prices: { status: "success", data: [boarding] } };
+    const { container, getAllByRole } = render(<BoardingContent data={data} />);
+    expect(container.textContent).toContain("Постой частных лошадей");
+    expect(getAllByRole("button", { name: "Записаться на постой" }).length).toBeGreaterThanOrEqual(1);
+    expect(container.textContent).not.toContain("временно недоступна");
+  });
+
+  it("UT-SVC-04: shows tariffs and the description-error alert when the description group errors but prices succeed", () => {
+    const data: Data = { ...empty, group: { status: "error", statusCode: 503 }, prices: { status: "success", data: [boarding] } };
+    const { container, getAllByRole, getByRole } = render(<BoardingContent data={data} />);
+    expect(container.textContent).toContain("Постой частных лошадей");
+    expect(getByRole("alert").textContent).toBe("Не удалось загрузить описание услуги.");
+    expect(getAllByRole("button", { name: "Записаться на постой" }).length).toBeGreaterThanOrEqual(1);
+    expect(container.textContent).not.toContain("временно недоступна");
+  });
+
   it("FE-4B.4: Постой/Инфраструктура/Что входит/Стоимость render as direct <section> siblings so the FE-1 automatic seam CSS (`.section + .section`) collapses their gap without any extra spacing prop", () => {
     const data: Data = { group, settings: { status: "success", data: [] }, prices: { status: "success", data: [boarding] } };
     const { container } = render(<BoardingContent data={data} />);

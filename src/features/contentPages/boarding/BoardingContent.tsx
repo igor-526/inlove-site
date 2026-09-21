@@ -27,11 +27,10 @@ export function BoardingContent({ data }: { data: BoardingData }) {
   };
   const included = ["Безопасное размещение", "Ежедневный уход", "Доступ к инфраструктуре клуба"];
   const requirements = ["Условия размещения и наличие мест подтверждаются сотрудником клуба."];
-  const visiblePrices = data.group.status === "success" ? data.prices : { status: "empty" as const };
+  const visiblePrices = data.prices;
   return <>
     <IntroSection headingLevel={1} eyebrow="Услуги" title="Постой" body={data.group.status === "success" ? data.group.data.description : undefined} image={mainPhoto(0)} />
     {data.group.status === "error" ? <p role="alert">Не удалось загрузить описание услуги.</p> : null}
-    {data.group.status === "empty" ? <p role="status">Услуга «Постой» временно недоступна.</p> : null}
     <EditorialSplitSection title="Инфраструктура" body="Условия постоя обсуждаются индивидуально после знакомства с клубом." image={mainPhoto(1)} imageSide="right" />
     {included.length ? <Section headingId="boarding-included-heading"><PageContainer>
       <Text as="h2" id="boarding-included-heading" variant="h2">Что входит</Text>

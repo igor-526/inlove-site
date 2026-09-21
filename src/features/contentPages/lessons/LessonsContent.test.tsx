@@ -68,4 +68,24 @@ describe("Lessons SSR content", () => {
     expect(lessonsMetadata(empty.settings)).toMatchObject({ title: "Инлав | Занятия и абонементы", alternates: { canonical: "/uslugi/zanyatiya" } });
     expect(lessonsMetadata({ status: "success", data: [setting("site.short_name", "LEGACY"), setting("seo.lessons.title", "LEGACY")] }).title).toBe("Инлав | Занятия и абонементы");
   });
+
+  // UT-SVC-01 (design.md#test-matrix, fix-077-inlove-services-availability): a production bug
+  // made the price cards disappear whenever the unrelated `horse_services` description group was
+  // empty, even though the page's own price-group API call had already succeeded.
+  it("UT-SVC-01: shows tariffs from a successful price group even when the description group is empty", () => {
+    const data: Data = { ...empty, group: { status: "empty" }, prices: { status: "success", data: [single, subscription] } };
+    const { container, getByRole } = render(<LessonsContent data={data} />);
+    expect(container.textContent).toContain("Индивидуальное занятие");
+    expect(getByRole("button", { name: "Записаться на занятие" })).toBeTruthy();
+    expect(container.textContent).not.toContain("временно недоступна");
+  });
+
+  it("UT-SVC-04: shows tariffs and the description-error alert when the description group errors but prices succeed", () => {
+    const data: Data = { ...empty, group: { status: "error", statusCode: 503 }, prices: { status: "success", data: [single, subscription] } };
+    const { container, getByRole } = render(<LessonsContent data={data} />);
+    expect(container.textContent).toContain("Индивидуальное занятие");
+    expect(getByRole("alert").textContent).toBe("Не удалось загрузить описание услуги.");
+    expect(getByRole("button", { name: "Записаться на занятие" })).toBeTruthy();
+    expect(container.textContent).not.toContain("временно недоступна");
+  });
 });
