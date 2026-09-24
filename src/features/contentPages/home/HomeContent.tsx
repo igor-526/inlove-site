@@ -1,4 +1,3 @@
-import { parseCoordinates } from "@/ui/media/coordinates";
 import type { Metadata } from 'next';
 import { NewsSection } from '@/ui/sections';
 import { PageContainer, Section, Text } from '@/ui/foundations';
@@ -6,7 +5,7 @@ import type { NewsSummary } from '@/ui/cards';
 import Link from 'next/link';
 import Image from 'next/image';
 import { normalizeSharedSettings } from '@/features/siteSettings/services/getSiteSettings';
-import { settingObject, settingText, type loadHomeData } from '../services/loaders';
+import { settingText, type loadHomeData } from '../services/loaders';
 import { HomeContacts, HomeHero } from './InteractiveSections';
 import { SITE_CONSUMER_CONFIG } from '@/features/siteSettings';
 import styles from './home.module.css';
@@ -28,7 +27,6 @@ export function HomeContent({ data }: { data: HomeData }) {
   const settings = data.settings.status === 'success' ? data.settings.data : [];
   const shared = normalizeSharedSettings(settings);
   const latest = data.news.status === 'success' ? data.news.data[0] : undefined;
-  const coordinates = parseCoordinates(settingObject(settings, 'contacts.coordinates'));
   const timezone = SITE_CONSUMER_CONFIG.news.timezone;
   const latestPhoto = latest?.photos.find((photo) => photo.is_main) ?? latest?.photos[0];
   const newsItems: NewsSummary[] = latest ? [{
@@ -59,8 +57,8 @@ export function HomeContent({ data }: { data: HomeData }) {
       </nav>
     </PageContainer></Section>
     <NewsSection items={newsItems} total={newsItems.length} mode="latest" state={data.news.status} />
-    <HomeContacts address={shared.address} nearestStop={shared.nearestStop} coordinates={coordinates}
-      mapsUrl={safeUrl(shared.mapsUrl)} phone={shared.phone} workingHours={shared.workingHours}
+    <HomeContacts address={shared.address} nearestStop={shared.nearestStop} latitude={shared.mapLatitude} longitude={shared.mapLongitude}
+      mapUrl={safeUrl(shared.mapUrl)} phone={shared.phone} weekdayHours={shared.weekdayHours} weekendHours={shared.weekendHours}
       socialLinks={shared.socialLinks.filter((link) => safeUrl(link.href))} ctaLabel="Обратный звонок" />
   </>;
 }

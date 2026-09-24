@@ -68,11 +68,23 @@ describe("site navigation", () => {
   });
 
   it("CT-NOTE-SHELL-04 renders shared contact icons, VK label and safe external targets", () => {
-    render(<SiteFooter shortName="ИНЛав" menu={[]} address="Адрес" mapsUrl="https://maps.example/" phone="+7 999 000-00-00" workingHours="10–20" socialLinks={[{ type: "vk", label: "ВКонтакте", href: "https://vk.example/" }, { type: "instagram", label: "Instagram", href: "https://instagram.example/" }]} copyrightName="ИНЛав" />);
+    render(<SiteFooter shortName="ИНЛав" menu={[]} address="Адрес" mapUrl="https://maps.example/" phone="+7 999 000-00-00" weekdayHours={{ start: "10:00", stop: "21:00" }} weekendHours={{ start: "10:00", stop: "21:00" }} socialLinks={[{ type: "vk", label: "ВКонтакте", href: "https://vk.example/" }, { type: "instagram", label: "Instagram", href: "https://instagram.example/" }]} copyrightName="ИНЛав" />);
     expect(screen.getByText("VK")).toBeTruthy(); expect(screen.queryByText("ВКонтакте")).toBeNull();
     const contacts = screen.getByText("Контакты").parentElement!;
     expect(contacts.querySelectorAll("svg[aria-hidden=true]")).toHaveLength(3);
     for (const link of contacts.querySelectorAll("a")) { expect(link.target).toBe("_blank"); expect(link.rel).toBe("noopener noreferrer"); }
+  });
+
+  it("UT-SHELL-05 shows footer hours directly under the address and hides an incomplete pair independently", () => {
+    const { getByText, queryByText, rerender } = render(<SiteFooter shortName="ИНЛав" menu={[]} address="Адрес клуба" weekdayHours={{ start: "10:00", stop: "21:00" }} weekendHours={{ start: "11:00", stop: "20:00" }} socialLinks={[]} copyrightName="ИНЛав" />);
+    const contacts = getByText("Контакты").parentElement!;
+    const nodes = Array.from(contacts.children).map((node) => node.textContent);
+    expect(nodes.indexOf("Адрес клуба")).toBeLessThan(nodes.indexOf("Будни: 10:00–21:00"));
+    expect(getByText("Выходные: 11:00–20:00")).toBeTruthy();
+
+    rerender(<SiteFooter shortName="ИНЛав" menu={[]} address="Адрес клуба" weekdayHours={{ start: "10:00", stop: "" }} weekendHours={{ start: "11:00", stop: "20:00" }} socialLinks={[]} copyrightName="ИНЛав" />);
+    expect(queryByText(/Будни/)).toBeNull();
+    expect(getByText("Выходные: 11:00–20:00")).toBeTruthy();
   });
 
   it("UT-NAV-02 keeps mobile focus trap, Escape close and focus return", () => {

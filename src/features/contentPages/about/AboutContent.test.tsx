@@ -34,7 +34,7 @@ describe('curated about SSR', () => {
   });
 
   it('renders atomic contacts independently with safe links', () => {
-    const html = render([setting('contacts.address', 'Основной адрес'), setting('contacts.nearest_stop', 'Остановка Лесная'), setting('contacts.primary_phone', '+79219880772'), setting('contacts.maps_url', 'https://yandex.ru/maps/'), setting('social.vk_url', 'https://vk.com/inlove')]);
+    const html = render([setting('contacts.address', 'Основной адрес'), setting('contacts.nearest_stop', 'Остановка Лесная'), setting('contacts.primary_phone', '+79219880772'), setting('contacts.map.url', 'https://yandex.ru/maps/'), setting('social.vk_url', 'https://vk.com/inlove')]);
     for (const value of ['Основной адрес', 'Остановка Лесная', '+7 921 988-07-72']) expect(html).toContain(value);
     expect(html).toContain('target="_blank"'); expect(html).toContain('rel="noopener noreferrer"');
   });
