@@ -36,7 +36,7 @@ describe('Home SSR', () => {
     expect(html).not.toContain('Стоимость уточняется'); expect(html).toContain('Контакты');
   });
   it('handles invalid settings locally and escapes plain CMS text and unsafe links', () => {
-    const html = renderToStaticMarkup(<HomeContent data={{ ...empty, settings: { status: 'success', data: [setting('home.hero_title', '<script>alert(1)</script>'), setting('home.program_benefits', '{', 'object'), setting('home.club_benefits', '[null,{"title":2},{"title":"Сохраняется"}]', 'object'), setting('contacts.maps_url', 'javascript:alert(1)'), setting('social.vk_url', 'javascript:alert(1)')] } }} />);
+    const html = renderToStaticMarkup(<HomeContent data={{ ...empty, settings: { status: 'success', data: [setting('home.hero_title', '<script>alert(1)</script>'), setting('home.program_benefits', '{', 'object'), setting('home.club_benefits', '[null,{"title":2},{"title":"Сохраняется"}]', 'object'), setting('contacts.map.url', 'javascript:alert(1)'), setting('social.vk_url', 'javascript:alert(1)')] } }} />);
     expect(html).not.toContain('<script>'); expect(html).not.toContain('href="javascript:'); expect(html).not.toContain('Сохраняется');
   });
   it('adapts photo, nullable snippet, encoded slug and tenant date for SSR', () => {

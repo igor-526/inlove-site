@@ -68,11 +68,23 @@ describe("site navigation", () => {
   });
 
   it("CT-NOTE-SHELL-04 renders shared contact icons, VK label and safe external targets", () => {
-    render(<SiteFooter shortName="ИНЛав" menu={[]} address="Адрес" mapsUrl="https://maps.example/" phone="+7 999 000-00-00" workingHours="10–20" socialLinks={[{ type: "vk", label: "ВКонтакте", href: "https://vk.example/" }, { type: "instagram", label: "Instagram", href: "https://instagram.example/" }]} copyrightName="ИНЛав" />);
+    render(<SiteFooter shortName="ИНЛав" menu={[]} address="Адрес" mapUrl="https://maps.example/" phone="+7 999 000-00-00" weekdayHours={{ start: "10:00", stop: "21:00" }} weekendHours={{ start: "10:00", stop: "21:00" }} socialLinks={[{ type: "vk", label: "ВКонтакте", href: "https://vk.example/" }, { type: "instagram", label: "Instagram", href: "https://instagram.example/" }]} copyrightName="ИНЛав" />);
     expect(screen.getByText("VK")).toBeTruthy(); expect(screen.queryByText("ВКонтакте")).toBeNull();
     const contacts = screen.getByText("Контакты").parentElement!;
     expect(contacts.querySelectorAll("svg[aria-hidden=true]")).toHaveLength(3);
     for (const link of contacts.querySelectorAll("a")) { expect(link.target).toBe("_blank"); expect(link.rel).toBe("noopener noreferrer"); }
+  });
+
+  it("UT-SHELL-05 shows footer hours directly under the address and hides an incomplete pair independently", () => {
+    const { getByText, queryByText, rerender } = render(<SiteFooter shortName="ИНЛав" menu={[]} address="Адрес клуба" weekdayHours={{ start: "10:00", stop: "21:00" }} weekendHours={{ start: "11:00", stop: "20:00" }} socialLinks={[]} copyrightName="ИНЛав" />);
+    const contacts = getByText("Контакты").parentElement!;
+    const nodes = Array.from(contacts.children).map((node) => node.textContent);
+    expect(nodes.indexOf("Адрес клуба")).toBeLessThan(nodes.indexOf("Будни: 10:00–21:00"));
+    expect(getByText("Выходные: 11:00–20:00")).toBeTruthy();
+
+    rerender(<SiteFooter shortName="ИНЛав" menu={[]} address="Адрес клуба" weekdayHours={{ start: "10:00", stop: "" }} weekendHours={{ start: "11:00", stop: "20:00" }} socialLinks={[]} copyrightName="ИНЛав" />);
+    expect(queryByText(/Будни/)).toBeNull();
+    expect(getByText("Выходные: 11:00–20:00")).toBeTruthy();
   });
 
   it("UT-NAV-02 keeps mobile focus trap, Escape close and focus return", () => {
@@ -94,12 +106,14 @@ describe("site navigation", () => {
     host.remove();
   });
 
-  it("UT-SC-15 renders a visually distinct group container for «Услуги» in mobile menu and footer", () => {
+  it("UT-SC-15 renders a visually distinct group for «Услуги» in mobile menu (container) and footer (indentation only)", () => {
     const css = readFileSync(`${process.cwd()}/src/ui/navigation/navigation.module.css`, "utf8");
     expect(css).toMatch(/\.groupedServices\{[^}]*border:var\(--border-default\)[^}]*border-radius:var\(--radius-md\)[^}]*background:var\(--color-bg-sand\)/);
     expect(css).toContain(".groupedServicesLabel{");
     expect(css).toContain(".groupedServicesDivider{");
-    expect(css).toMatch(/\.footer \.groupedServices\{[^}]*background:rgba\(255,255,255,\.04\)/);
+    // Footer 076: no container/border and no arrow icon — only indentation of the child links.
+    expect(css).toMatch(/\.footer \.groupedServices\{[^}]*border:0[^}]*background:transparent/);
+    expect(css).toMatch(/\.footer \.groupedServices \.navLink\{padding-left:var\(--space-4\)\}/);
 
     const { unmount } = render(<MobileMenu open menu={FALLBACK_SHARED_SETTINGS.menu} socialLinks={[]} ctaLabel="Записаться" shortName="ИНЛав" onClose={vi.fn()} onRequestCallback={vi.fn()} />);
     const mobileLabel = screen.getByText("Услуги");
@@ -111,27 +125,26 @@ describe("site navigation", () => {
     const { container: footerContainer } = render(<SiteFooter shortName="ИНЛав" menu={FALLBACK_SHARED_SETTINGS.menu} socialLinks={[]} copyrightName="ИНЛав" />);
     const footerLabel = within(footerContainer).getByText("Услуги");
     const footerGroup = footerLabel.parentElement!;
-    expect(footerGroup.querySelector("hr")).toBeTruthy();
-    expect(footerGroup.querySelector("svg")).toBeTruthy();
+    // Footer group is distinguished by indentation only: no divider/arrow rendered at all.
+    expect(footerGroup.querySelector("hr")).toBeNull();
+    expect(footerGroup.querySelector("svg")).toBeNull();
   });
 
-  it("UT-SC-14 keeps the active-item marker centered on the text line instead of offset below it", () => {
-    // Regression guard for the manual-only UT-SC-14 scenario (marker vertically centered
-    // relative to the text line, not from the bottom edge of the 44px touch-target block —
-    // see docs/sites/inlove/components.md). `.navLink`/`.servicesTrigger` are `position:relative`
-    // flex containers with `align-items:center`, so the pseudo-element's own containing block
-    // already has its vertical center coincide with the text's vertical center: `top:50%`
-    // combined with `translate(-50%,-50%)` centers the marker exactly there, with no magic
-    // pixel offset. Any reintroduced fixed offset (e.g. `bottom:4px`, or a non-`-50%` Y
-    // translate such as `translate(-50%,11px)`) pushes the dot below the text again — exactly
-    // the regression QG-FE caught (via real-browser check) after the first FE-6 fix attempt.
+  it("UT-SC-14 keeps the active-item marker directly under the text line, not overlapping or detached", () => {
+    // 076 regression fix: the marker previously sat at top:50% of the *whole* 44px touch-target
+    // box (`.navLink`/`.servicesTrigger`), which — because that box also vertically centers the
+    // text via `align-items:center` — placed the dot exactly on top of the glyphs. The marker now
+    // anchors to `.navLinkLabel` (a span wrapping just the visible text) with `top:100%`, i.e.
+    // immediately below the text's own line box, plus a small fixed gap so it stays visually
+    // attached without touching descenders.
     const css = readFileSync(`${process.cwd()}/src/ui/navigation/navigation.module.css`, "utf8");
-    const rule = css.match(/\.navLink\[aria-current=page\]::after,\.servicesTrigger\[data-active=true\]::after\{[^}]*\}/)?.[0];
+    expect(css).toContain(".navLinkLabel{position:relative;display:inline-block}");
+    const rule = css.match(/\.navLink\[aria-current=page\] \.navLinkLabel::after,\.servicesTrigger\[data-active=true\] \.navLinkLabel::after\{[^}]*\}/)?.[0];
     expect(rule).toBeTruthy();
-    expect(rule).toContain("top:50%");
-    expect(rule).toMatch(/transform:translate\(-50%,-50%\)/);
-    expect(rule).not.toContain("bottom:");
-    expect(rule).not.toMatch(/translate\(-50%,\s*(?!-50%\))-?\d/);
+    expect(rule).toContain("top:100%");
+    expect(rule).toMatch(/transform:translateX\(-50%\)/);
+    expect(rule).not.toMatch(/top:50%/);
+    expect(rule).not.toMatch(/translate\(-50%,-50%\)/);
   });
 
   it("UT-NAV-04 provides dynamic viewport, safe-area and internal-scroll geometry", () => {

@@ -51,9 +51,9 @@ export function Carousel({ items, initialIndex = 0, renderItem }: { items: Image
   return <div className={styles.carousel} onKeyDown={(event) => { if (event.key === "ArrowRight") move(current + 1); if (event.key === "ArrowLeft") move(current - 1); }}><div className={styles.controls}><button type="button" onClick={() => move(current - 1)} disabled={current === 0} aria-label="Предыдущее изображение">←</button><button type="button" onClick={() => move(current + 1)} disabled={current === items.length - 1} aria-label="Следующее изображение">→</button></div><div ref={trackRef} className={styles.track} tabIndex={0} aria-describedby={statusId}>{items.map((item, index) => <div className={styles.slide} key={`${item.src}-${index}`}>{renderItem ? renderItem(item, index) : <ResponsiveImage {...item} ratio="4:5" />}</div>)}</div><p className={styles.srOnly} id={statusId} aria-live="polite">Изображение {current + 1} из {items.length}</p></div>;
 }
 
-export function MapEmbed({ coordinates, address, mapsUrl }: { coordinates?: { lat: number; lng: number }; address: string; mapsUrl?: string }) {
-  const point = parseCoordinates(coordinates);
+export function MapEmbed({ latitude, longitude, address, mapUrl }: { latitude?: number; longitude?: number; address: string; mapUrl?: string }) {
+  const point = parseCoordinates(latitude, longitude);
   const embedUrl = point ? `https://yandex.ru/map-widget/v1/?ll=${point.lng}%2C${point.lat}&z=14&pt=${point.lng},${point.lat},pm2rdl` : undefined;
-  const routeUrl = mapsUrl && /^https?:\/\//i.test(mapsUrl) ? mapsUrl : undefined;
+  const routeUrl = mapUrl && /^https?:\/\//i.test(mapUrl) ? mapUrl : undefined;
   return <figure className={styles.map}><div className={styles.mapFrame}>{embedUrl ? <iframe title={`Карта: ${address}`} src={embedUrl} loading="lazy" allowFullScreen /> : <div className={styles.mapFallback}>Карта недоступна</div>}</div><figcaption><span>{address}</span>{routeUrl ? <a href={routeUrl} target="_blank" rel="noopener noreferrer">Открыть маршрут</a> : null}</figcaption></figure>;
 }

@@ -6,9 +6,11 @@
 .section.trimBottom { padding-bottom: 0; }
 /* Seam: смежные Section схлопывают отступ в одно значение вместо суммы паддингов. Escape hatch: data-no-seam на любой из двух смежных Section отключает схлопывание для этой пары. */
 .section:not([data-no-seam]) + .section:not([data-no-seam]) { padding-top: 0; margin-top: var(--space-seam); }
+/* Forest CTA blocks keep the seam-collapsed outer gap, but restore an internal top offset so the heading does not sit flush against the visible dark background edge. */
+.section:not([data-no-seam]) + .section.forest:not([data-no-seam]) { padding-top: var(--space-seam); }
 .ivory { background: var(--color-bg-primary); }.surface { background: var(--color-bg-secondary); }
 .sage { background: var(--color-bg-sage); }.sand { background: var(--color-bg-sand); }
-.forest { background: var(--color-bg-dark); color: var(--color-text-inverse); }
+.forest { background: var(--color-bg-dark); color: var(--color-text-inverse); --button-border-color: var(--color-text-inverse); }
 .text { margin: 0; overflow-wrap: anywhere; }
 .serif { font-family: var(--font-serif); font-weight: 500; }
 .sans { font-family: var(--font-sans); }

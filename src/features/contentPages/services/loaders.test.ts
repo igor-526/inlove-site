@@ -54,9 +54,14 @@ it('home/about request only the curated keys and no action-1/action-5/legacy con
   const requestedKeys = settingsUrls.flatMap((url) => new URL(url).searchParams.getAll('key'));
   expect(new Set(requestedKeys)).toEqual(new Set([
     'home.hero_title', 'home.hero_subtitle', 'about_1_title', 'about_1_text', 'about_2_title', 'about_2_text',
-    'footer.description', 'footer.copyright_name', 'contacts.address', 'contacts.primary_phone', 'contacts.coordinates',
-    'contacts.maps_url', 'contacts.nearest_stop', 'contacts.working_hours', 'social.vk_url', 'social.instagram_url',
+    'footer.description', 'footer.copyright_name', 'contacts.address', 'contacts.primary_phone',
+    'contacts.map.latitude', 'contacts.map.longitude', 'contacts.map.url', 'contacts.nearest_stop',
+    'contacts.hours.weekdays.start', 'contacts.hours.weekdays.stop', 'contacts.hours.weekend.start', 'contacts.hours.weekend.stop',
+    'social.vk_url', 'social.instagram_url',
   ]));
+  expect(requestedKeys).not.toContain('contacts.coordinates');
+  expect(requestedKeys).not.toContain('contacts.maps_url');
+  expect(requestedKeys).not.toContain('contacts.working_hours');
   expect(requestedKeys.join(' ')).not.toMatch(/(^|\s)(header\.|callback\.|seo\.|services\.|team\.|reviews\.|about\.(intro|setting|features)|contacts\.(phones|address_alternative))|home\.(hero_cta_label|program_benefits|club_benefits)/);
 });
 it('home uses only anonymous settings/news and never fetches prices', async () => {

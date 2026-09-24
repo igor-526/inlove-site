@@ -8,13 +8,15 @@ import { CALLBACK_REQUEST_EVENT } from '@/features/siteChrome/SiteChrome';
 import type { SiteSettingMiniOutDto } from '@/types/siteSettings';
 import { MapEmbed } from '../media';
 import { parseCoordinates } from '../media/coordinates';
+import { ContactSection } from './index';
 
-const setting = (key: string, value: unknown): SiteSettingMiniOutDto => ({ key, type: typeof value === 'string' ? 'string' : 'object', value: typeof value === 'string' ? value : JSON.stringify(value) });
+const setting = (key: string, value: unknown, type?: string): SiteSettingMiniOutDto => ({ key, type: type ?? (typeof value === 'string' ? 'string' : 'object'), value: typeof value === 'string' ? value : JSON.stringify(value) });
 const settings = { status: 'success' as const, data: [
   setting('contacts.primary_phone', '+79219880772'), setting('social.vk_url', 'https://vk.ru/inlovehorse'),
   setting('social.instagram_url', 'https://www.instagram.com/ksk.inlove/'),
-  setting('contacts.coordinates', { latitude: 59.773315, longitude: 29.973801 }),
-  setting('contacts.maps_url', 'https://yandex.ru/maps/org/inlav/65789410136/'),
+  setting('contacts.map.latitude', '59.773315', 'float'),
+  setting('contacts.map.longitude', '29.973801', 'float'),
+  setting('contacts.map.url', 'https://yandex.ru/maps/org/inlav/65789410136/'),
 ] };
 afterEach(cleanup);
 describe('NOTE-02 shared contacts', () => {
@@ -47,11 +49,33 @@ describe('NOTE-02 shared contacts', () => {
       window.removeEventListener(CALLBACK_REQUEST_EVENT, listener);
     });
   }
+  it('hides the map card when only one coordinate is set and there is no map url', () => {
+    const { container, queryByText } = render(<ContactSection address="Адрес" socialLinks={[]} ctaLabel="Связаться" context="Тест" onRequest={vi.fn()} latitude={59.773315} />);
+    expect(container.querySelector('iframe')).toBeNull();
+    expect(queryByText('Карта недоступна')).toBeNull();
+  });
   it('rejects invalid coordinates and keeps external route with missing embed', () => {
-    for (const value of [null, {}, { latitude: 91, longitude: 1 }, { lat: 0, lng: Infinity }, { latitude: '59', longitude: 29 }]) expect(parseCoordinates(value)).toBeUndefined();
-    expect(parseCoordinates({ lat: 0, lng: 0 })).toEqual({ lat: 0, lng: 0 });
-    const { container, getByRole } = render(<MapEmbed address="Адрес клуба" mapsUrl="https://yandex.ru/maps/" />);
+    for (const [lat, lng] of [[91, 1], [0, Infinity], [Number.NaN, 29], [undefined, undefined]] as const) expect(parseCoordinates(lat, lng)).toBeUndefined();
+    expect(parseCoordinates(0, 0)).toEqual({ lat: 0, lng: 0 });
+    const { container, getByRole } = render(<MapEmbed address="Адрес клуба" mapUrl="https://yandex.ru/maps/" />);
     expect(container.querySelector('iframe')).toBeNull();
     expect(getByRole('link', { name: 'Открыть маршрут' }).getAttribute('rel')).toBe('noopener noreferrer');
+  });
+  it('renders separate weekday and weekend hours when both pairs are complete', () => {
+    const { getByText } = render(<ContactSection address="Адрес" socialLinks={[]} ctaLabel="Связаться" context="Тест" onRequest={vi.fn()}
+      weekdayHours={{ start: '10:00', stop: '21:00' }} weekendHours={{ start: '11:00', stop: '20:00' }} />);
+    expect(getByText('Будни: 10:00–21:00')).toBeTruthy();
+    expect(getByText('Выходные: 11:00–20:00')).toBeTruthy();
+  });
+  it('hides an incomplete hours pair independently without inventing a value', () => {
+    const { getByText, queryByText } = render(<ContactSection address="Адрес" socialLinks={[]} ctaLabel="Связаться" context="Тест" onRequest={vi.fn()}
+      weekdayHours={{ start: '10:00', stop: '' }} weekendHours={{ start: '11:00', stop: '20:00' }} />);
+    expect(queryByText(/Будни/)).toBeNull();
+    expect(getByText('Выходные: 11:00–20:00')).toBeTruthy();
+  });
+  it('renders nothing for hours when both pairs are absent', () => {
+    const { queryByText } = render(<ContactSection address="Адрес" socialLinks={[]} ctaLabel="Связаться" context="Тест" onRequest={vi.fn()} />);
+    expect(queryByText(/Будни/)).toBeNull();
+    expect(queryByText(/Выходные/)).toBeNull();
   });
 });
